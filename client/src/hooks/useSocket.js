@@ -27,8 +27,10 @@ const useSocket = () => {
     }
 
     if (!socket) {
-      socket = io('/', {
+      const socketServerUrl = import.meta.env.VITE_SOCKET_URL || (import.meta.env.DEV ? 'http://localhost:5000' : '/');
+      socket = io(socketServerUrl, {
         transports: ['websocket', 'polling'],
+        withCredentials: true,
       });
     }
 
