@@ -1,0 +1,17 @@
+{
+  "name": "portfolio-management-platform",
+  "version": "1.0.0",
+  "description": "PortfolioPro - Comprehensive Portfolio Management Platform",
+  "private": true,
+  "scripts": {
+    "dev:server": "npm --prefix server run dev",
+    "dev:client": "npm --prefix client run dev",
+    "seed": "npm --prefix server run seed",
+    "build": "npm --prefix client run build",
+    "start": "npm --prefix server start",
+    "install:all": "npm --prefix server install && npm --prefix client install"
+  },
+  "keywords": ["portfolio", "finance", "stocks", "investing", "mern", "socketio"],
+  "author": "",
+  "license": "ISC"
+}
