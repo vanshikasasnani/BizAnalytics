@@ -19,7 +19,34 @@ const AssetModal = ({ asset, onClose, onSave }) => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const [fetchingQuote, setFetchingQuote] = useState(false);
+  const [quoteMsg, setQuoteMsg] = useState('');
+
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+
+  const handleFetchQuote = async () => {
+    if (!form.symbol) {
+      setQuoteMsg('Enter a symbol first');
+      return;
+    }
+    setFetchingQuote(true);
+    setQuoteMsg('');
+    try {
+      const { data } = await api.get(`/portfolio/quote/${form.symbol.trim()}`);
+      if (data?.quote) {
+        setForm((prev) => ({
+          ...prev,
+          currentPrice: data.quote.price,
+          name: prev.name || data.quote.name || prev.symbol,
+        }));
+        setQuoteMsg(`Live: ₹${data.quote.price} (${data.quote.changePercent >= 0 ? '+' : ''}${data.quote.changePercent}%)`);
+      }
+    } catch {
+      setQuoteMsg('Symbol not found on market');
+    } finally {
+      setFetchingQuote(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -56,8 +83,21 @@ const AssetModal = ({ asset, onClose, onSave }) => {
               <input name="name" value={form.name} onChange={handleChange} className="input-field" placeholder="e.g. Reliance Industries" />
             </div>
             <div>
-              <label className="label">Symbol</label>
-              <input name="symbol" value={form.symbol} onChange={handleChange} className="input-field" placeholder="e.g. RELIANCE" />
+              <div className="flex items-center justify-between">
+                <label className="label">Symbol</label>
+                {quoteMsg && <span className="text-xs text-navy-400 font-medium">{quoteMsg}</span>}
+              </div>
+              <div className="flex gap-2">
+                <input name="symbol" value={form.symbol} onChange={handleChange} className="input-field uppercase" placeholder="e.g. AAPL" />
+                <button
+                  type="button"
+                  onClick={handleFetchQuote}
+                  disabled={fetchingQuote}
+                  className="px-3 py-2 text-xs bg-dark-700 hover:bg-dark-600 text-white rounded-lg font-medium whitespace-nowrap transition-colors"
+                >
+                  {fetchingQuote ? '...' : 'Fetch'}
+                </button>
+              </div>
             </div>
             <div>
               <label className="label">Category *</label>
@@ -110,6 +150,22 @@ const Portfolio = () => {
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [sortBy, setSortBy] = useState('name');
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefreshPrices = async () => {
+    setRefreshing(true);
+    try {
+      const { data } = await api.post('/portfolio/refresh-prices');
+      setSuccess(data.message || 'Market prices updated!');
+      fetchPortfolio();
+      setTimeout(() => setSuccess(''), 4000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to refresh prices');
+      setTimeout(() => setError(''), 4000);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const fetchPortfolio = async () => {
     try {
@@ -184,9 +240,20 @@ const Portfolio = () => {
           <h1 className="page-title">My Portfolio</h1>
           <p className="page-subtitle">Manage your investment assets</p>
         </div>
-        <button onClick={() => { setEditAsset(null); setShowModal(true); }} className="btn-primary">
-          + Add Asset
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleRefreshPrices}
+            disabled={refreshing}
+            className="btn-secondary flex items-center gap-2"
+            title="Fetch real-time market prices from Yahoo Finance"
+          >
+            <span className={refreshing ? 'animate-spin' : ''}>🔄</span>
+            {refreshing ? 'Updating Prices...' : 'Live Market Update'}
+          </button>
+          <button onClick={() => { setEditAsset(null); setShowModal(true); }} className="btn-primary">
+            + Add Asset
+          </button>
+        </div>
       </div>
 
       {error && <div className="alert-error mb-4">{error}</div>}

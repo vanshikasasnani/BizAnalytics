@@ -4,14 +4,26 @@
   "description": "PortfolioPro - Comprehensive Portfolio Management Platform",
   "private": true,
   "scripts": {
+    "dev": "concurrently -n \"SERVER,CLIENT\" -c \"blue,green\" \"npm run dev:server\" \"npm run dev:client\"",
     "dev:server": "npm --prefix server run dev",
     "dev:client": "npm --prefix client run dev",
     "seed": "npm --prefix server run seed",
     "build": "npm --prefix client run build",
+    "test": "npm --prefix server test",
     "start": "npm --prefix server start",
     "install:all": "npm --prefix server install && npm --prefix client install"
   },
-  "keywords": ["portfolio", "finance", "stocks", "investing", "mern", "socketio"],
+  "keywords": [
+    "portfolio",
+    "finance",
+    "stocks",
+    "investing",
+    "mern",
+    "socketio"
+  ],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^10.0.7"
+  }
 }

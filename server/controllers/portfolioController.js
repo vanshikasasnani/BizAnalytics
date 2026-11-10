@@ -1,4 +1,5 @@
 const Portfolio = require('../models/Portfolio');
+const { fetchQuote, refreshPortfolioPrices } = require('../services/marketDataService');
 
 // Helper to get or create portfolio for user
 const getOrCreatePortfolio = async (userId) => {
@@ -152,4 +153,49 @@ const deleteAsset = async (req, res) => {
   }
 };
 
-module.exports = { getPortfolio, addAsset, getAsset, updateAsset, deleteAsset };
+// @desc    Refresh live prices for all assets in user's portfolio
+// @route   POST /api/portfolio/refresh-prices
+// @access  Private
+const refreshPrices = async (req, res) => {
+  try {
+    const portfolio = await Portfolio.findOne({ user: req.user._id });
+    if (!portfolio) return res.status(404).json({ message: 'Portfolio not found' });
+
+    const { updatedCount } = await refreshPortfolioPrices(portfolio.assets);
+    await portfolio.save();
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(req.user._id.toString()).emit('notification', {
+        type: 'portfolio_updated',
+        message: `Updated market prices for ${updatedCount} asset(s)`,
+        timestamp: new Date(),
+      });
+    }
+
+    res.json({
+      message: `Successfully refreshed live prices for ${updatedCount} asset(s)`,
+      portfolio,
+      updatedCount,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Get live quote for a symbol
+// @route   GET /api/portfolio/quote/:symbol
+// @access  Private
+const getMarketQuote = async (req, res) => {
+  try {
+    const quote = await fetchQuote(req.params.symbol);
+    if (!quote) {
+      return res.status(404).json({ message: `Could not fetch quote for symbol "${req.params.symbol}"` });
+    }
+    res.json({ quote });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { getPortfolio, addAsset, getAsset, updateAsset, deleteAsset, refreshPrices, getMarketQuote };

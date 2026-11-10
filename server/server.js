@@ -73,8 +73,12 @@ app.use(notFound);
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
-httpServer.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📡 Socket.IO ready`);
-  console.log(`🌐 API: http://localhost:${PORT}/api`);
-});
+if (process.env.NODE_ENV !== 'test') {
+  httpServer.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`📡 Socket.IO ready`);
+    console.log(`🌐 API: http://localhost:${PORT}/api`);
+  });
+}
+
+module.exports = { app, httpServer };
