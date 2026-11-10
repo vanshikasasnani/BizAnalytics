@@ -66,7 +66,24 @@ npm run dev
 
 The backend will start on `http://localhost:5000`
 
-### Step 4 — Install & Start Frontend
+### Step 4 — Seed Demo Data (Optional but Recommended)
+
+Populate the database with realistic sample portfolios, transactions, watchlists, and demo users:
+
+```bash
+# From server directory
+cd server
+npm run seed
+
+# Or from root directory
+npm run seed
+```
+
+This creates:
+- **Demo User:** `demo@example.com` / `password123` (Preloaded with AAPL, MSFT, VOO, IEF holdings & transactions)
+- **Admin User:** `admin@example.com` / `admin123` (Access to Admin Dashboard at `/admin`)
+
+### Step 5 — Start Frontend
 
 Open a new terminal:
 
@@ -77,6 +94,23 @@ npm run dev
 ```
 
 The frontend will start on `http://localhost:5173`
+
+---
+
+## ⚡ Quick Start from Root
+
+You can also run commands directly from the root folder:
+
+```bash
+# Seed database
+npm run seed
+
+# Run Backend
+npm run dev:server
+
+# Run Frontend
+npm run dev:client
+```
 
 ---
 
