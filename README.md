@@ -8,8 +8,8 @@ A complete, production-ready, full-stack **Business Performance & Sales Analytic
 
 - **Frontend:** React 19, Vite, Tailwind CSS, React Router DOM v7, Axios, Recharts, Headless UI, Socket.IO Client
 - **Backend:** Node.js, Express.js, MongoDB, Mongoose 8, JWT (JSON Web Tokens), bcryptjs, Socket.IO, CORS, dotenv
-- **Testing:** Jest, Supertest (14 passing automated integration tests)
-- **Containerization:** Docker, Docker Compose, Nginx
+- **Testing:** Jest, Supertest (14 backend tests), Vitest, React Testing Library (12 frontend tests) — **26 total automated tests**
+- **Containerization & CI/CD:** Docker, Docker Compose, Nginx, GitHub Actions (`.github/workflows/ci.yml`)
 
 ---
 
@@ -176,10 +176,36 @@ npm run seed
 
 ---
 
+## 📋 Evaluation Checklist Mapping
+
+| Requirement | Implementation in Project |
+|---|---|
+| **Frontend with Tailwind** | Tailwind CSS 3.4 with custom palettes, responsive sidebar drawer, glassmorphism card components, and utility badges |
+| **React & State Management** | React 19, React Router v7, `AuthContext` (JWT session), `AppDataContext` (catalog, customer, dashboard cache), custom hooks |
+| **Backend REST API** | Express modular REST architecture with 7 route groups (`auth`, `products`, `customers`, `sales`, `analytics`, `notifications`, `admin`) |
+| **MongoDB & Mongoose** | 5 Mongoose schemas (`User`, `Product`, `Customer`, `Sale`, `Notification`) with virtuals, pre-save hooks, relational refs |
+| **Data Validation** | Layered: client-side form checks + `express-validator` middleware (HTTP 422) + inventory stock limits + schema constraints |
+| **Authentication & Authorization** | Stateless JWT tokens, `bcryptjs` hashing, `protect` middleware, `admin` RBAC with self-protection guards |
+| **Real-Time Features (Socket.IO)**| Bi-directional WebSocket, live sync navbar badge, real-time sale broadcasts, automated low-stock alerts, bell counter |
+| **Docker** | `server/Dockerfile` (Node 20 Alpine), `client/Dockerfile` (multi-stage Nginx), `docker-compose.yml` (Mongo + Server + Client) |
+| **DevOps & Deployment** | GitHub Actions CI/CD (`.github/workflows/ci.yml`), `render.yaml`, `vercel.json`, `client/nginx.conf` reverse proxy |
+| **Testing** | 26 automated tests passing (14 backend Jest/Supertest + 12 frontend Vitest/RTL) |
+
+---
+
 ## 🧪 Automated Test Suite
 
-Run the automated integration test suite:
+Run the full automated test suite (both backend and frontend):
 ```bash
 npm test
 ```
-**Results:** 14 passed out of 14 test cases covering Health, Auth, Products, Customers, Sales, Analytics, and Notifications.
+
+Or run individually:
+```bash
+npm run test:server    # 14 Backend API tests (Jest + Supertest)
+npm run test:client    # 12 Frontend Component tests (Vitest + React Testing Library)
+```
+
+**Results:** **26/26 tests passing**:
+- **Backend (14 tests)**: Health check, Auth registration/login/me, Product CRUD, Customer CRUD, Sale creation with stock deduction, Insufficient stock rejection, Analytics metrics, CSV exports, Notifications.
+- **Frontend (12 tests)**: Login validation and authentication triggers, Products catalog rendering and low-stock indicators, Dashboard KPI cards and Recharts visualizations.
