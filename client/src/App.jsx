@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { AppDataProvider } from './context/AppDataContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
 import { useAuth } from './context/AuthContext';
@@ -135,7 +136,9 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <AppRoutes />
+        <AppDataProvider>
+          <AppRoutes />
+        </AppDataProvider>
       </AuthProvider>
     </BrowserRouter>
   );

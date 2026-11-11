@@ -1,12 +1,36 @@
 const express = require('express');
 const router = express.Router();
+const { body } = require('express-validator');
 const { register, login, getMe, updateProfile, changePassword } = require('../controllers/authController');
 const { protect } = require('../middleware/authMiddleware');
+const validate = require('../middleware/validate');
 
-router.post('/register', register);
-router.post('/login', login);
+// Validation rules
+const registerRules = [
+  body('name').trim().notEmpty().withMessage('Name is required'),
+  body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
+  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+];
+
+const loginRules = [
+  body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
+  body('password').notEmpty().withMessage('Password is required'),
+];
+
+const updateProfileRules = [
+  body('name').optional().trim().notEmpty().withMessage('Name cannot be empty'),
+  body('email').optional().isEmail().normalizeEmail().withMessage('Valid email is required'),
+];
+
+const changePasswordRules = [
+  body('currentPassword').notEmpty().withMessage('Current password is required'),
+  body('newPassword').isLength({ min: 6 }).withMessage('New password must be at least 6 characters'),
+];
+
+router.post('/register', registerRules, validate, register);
+router.post('/login', loginRules, validate, login);
 router.get('/me', protect, getMe);
-router.put('/profile', protect, updateProfile);
-router.put('/password', protect, changePassword);
+router.put('/profile', protect, updateProfileRules, validate, updateProfile);
+router.put('/password', protect, changePasswordRules, validate, changePassword);
 
 module.exports = router;

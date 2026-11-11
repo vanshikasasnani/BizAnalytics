@@ -18,7 +18,7 @@ const Navbar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const { notifications, unreadCount, markAsRead, clearAll } = useSocket();
+  const { isConnected, notifications, unreadCount, markAsRead, clearAll } = useSocket();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const notifRef = useRef(null);
@@ -172,9 +172,22 @@ const Navbar = () => {
             ☰
           </button>
           <div>
-            <h1 className="text-base sm:text-lg font-bold text-white truncate font-display">
-              {getPageTitle()}
-            </h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-base sm:text-lg font-bold text-white truncate font-display">
+                {getPageTitle()}
+              </h1>
+              {isConnected ? (
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" title="Socket.IO Real-time Connection Active">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  Live Sync
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20" title="Connecting to Socket.IO...">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                  Connecting
+                </span>
+              )}
+            </div>
             <span className="hidden sm:inline-block text-[11px] text-dark-400">
               Live Business Analytics • MongoDB Connected
             </span>

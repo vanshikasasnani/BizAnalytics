@@ -9,6 +9,7 @@ const useSocket = () => {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [isConnected, setIsConnected] = useState(false);
 
   const fetchStoredNotifications = useCallback(async () => {
     try {
@@ -48,7 +49,12 @@ const useSocket = () => {
     }
 
     socket.on('connect', () => {
+      setIsConnected(true);
       socket.emit('join', user._id);
+    });
+
+    socket.on('disconnect', () => {
+      setIsConnected(false);
     });
 
     socket.on('notification', (data) => {
@@ -59,6 +65,7 @@ const useSocket = () => {
       if (socket) {
         socket.off('notification');
         socket.off('connect');
+        socket.off('disconnect');
       }
     };
   }, [user, addNotification, fetchStoredNotifications]);
@@ -90,7 +97,7 @@ const useSocket = () => {
     }
   }, []);
 
-  return { notifications, unreadCount, markAsRead, clearAll, refresh: fetchStoredNotifications };
+  return { isConnected, notifications, unreadCount, markAsRead, clearAll, refresh: fetchStoredNotifications };
 };
 
 export default useSocket;
