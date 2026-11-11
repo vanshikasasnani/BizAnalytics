@@ -10,9 +10,11 @@ const { notFound, errorHandler } = require('./middleware/errorMiddleware');
 
 // Route imports
 const authRoutes = require('./routes/authRoutes');
-const portfolioRoutes = require('./routes/portfolioRoutes');
-const transactionRoutes = require('./routes/transactionRoutes');
-const watchlistRoutes = require('./routes/watchlistRoutes');
+const productRoutes = require('./routes/productRoutes');
+const customerRoutes = require('./routes/customerRoutes');
+const saleRoutes = require('./routes/saleRoutes');
+const analyticsRoutes = require('./routes/analyticsRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 
 // Connect to database
@@ -74,14 +76,16 @@ app.use(express.urlencoded({ extended: true }));
 
 // API Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/portfolio', portfolioRoutes);
-app.use('/api/transactions', transactionRoutes);
-app.use('/api/watchlist', watchlistRoutes);
+app.use('/api/products', productRoutes);
+app.use('/api/customers', customerRoutes);
+app.use('/api/sales', saleRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin', adminRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'PortfolioPro API is running 🚀' });
+  res.json({ status: 'OK', message: 'Business Performance & Sales Analytics API is running 🚀' });
 });
 
 // Error Middleware

@@ -1,269 +1,311 @@
 import { useState, useEffect, useCallback } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
+
+const formatCurrency = (val) => `₹${Number(val || 0).toLocaleString('en-IN')}`;
 
 const AdminDashboard = () => {
+  const { user: currentUser } = useAuth();
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
-  const [userSearch, setUserSearch] = useState('');
+  const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState('All');
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('users'); // 'overview' | 'users' | 'activity'
+  const [feedback, setFeedback] = useState({ type: '', message: '' });
 
-  const fetchData = async () => {
-    try {
-      const [statsRes, usersRes] = await Promise.all([
-        api.get('/admin/stats'),
-        api.get('/admin/users'),
-      ]);
-      setStats(statsRes.data);
-      setUsers(usersRes.data.users);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to load admin data');
-    } finally {
-      setLoading(false);
-    }
+  const notify = (type, message) => {
+    setFeedback({ type, message });
+    setTimeout(() => setFeedback({ type: '', message: '' }), 4000);
   };
 
-  useEffect(() => { fetchData(); }, []);
+  const fetchStats = async () => {
+    try {
+      const res = await api.get('/admin/stats');
+      setStats(res.data);
+    } catch (err) {
+      notify('error', 'Failed to load administrator statistics');
+    }
+  };
 
   const fetchUsers = useCallback(async () => {
     try {
-      const { data } = await api.get(`/admin/users?search=${userSearch}`);
-      setUsers(data.users);
+      setLoading(true);
+      const params = new URLSearchParams();
+      if (search) params.set('search', search);
+      if (roleFilter !== 'All') params.set('role', roleFilter);
+
+      const res = await api.get(`/admin/users?${params.toString()}`);
+      setUsers(res.data.users || []);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to search users');
+      notify('error', 'Failed to retrieve user accounts');
+    } finally {
+      setLoading(false);
     }
-  }, [userSearch]);
+  }, [search, roleFilter]);
 
   useEffect(() => {
-    if (activeTab === 'users') fetchUsers();
-  }, [fetchUsers, activeTab]);
+    fetchStats();
+    fetchUsers();
+  }, [fetchUsers]);
 
-  const handleToggleUser = async (userId, name, currentStatus) => {
-    if (!confirm(`${currentStatus ? 'Deactivate' : 'Activate'} user "${name}"?`)) return;
+  const handleToggleStatus = async (user) => {
+    if (user._id === currentUser._id) {
+      return notify('error', 'You cannot deactivate your own administrative account');
+    }
+
     try {
-      await api.put(`/admin/users/${userId}/toggle`);
-      setSuccess(`User ${currentStatus ? 'deactivated' : 'activated'} successfully`);
-      fetchData();
-      setTimeout(() => setSuccess(''), 4000);
+      const res = await api.put(`/admin/users/${user._id}/toggle`);
+      notify('success', res.data.message);
+      fetchUsers();
+      fetchStats();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update user');
-      setTimeout(() => setError(''), 4000);
+      notify('error', err.response?.data?.message || 'Failed to update user status');
     }
   };
 
-  const handleDeleteUser = async (userId, name) => {
-    if (!confirm(`Permanently delete user "${name}" and all their data?`)) return;
+  const handleRoleChange = async (user, newRole) => {
+    if (user._id === currentUser._id && newRole !== 'admin') {
+      return notify('error', 'You cannot remove your own admin privileges');
+    }
+
     try {
-      await api.delete(`/admin/users/${userId}`);
-      setSuccess('User deleted successfully');
-      fetchData();
-      setTimeout(() => setSuccess(''), 4000);
+      const res = await api.put(`/admin/users/${user._id}/role`, { role: newRole });
+      notify('success', res.data.message);
+      fetchUsers();
+      fetchStats();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to delete user');
-      setTimeout(() => setError(''), 4000);
+      notify('error', err.response?.data?.message || 'Failed to update user role');
     }
   };
 
-  if (loading) return <div className="flex items-center justify-center h-64"><div className="spinner"></div></div>;
-  if (error && !stats) return <div className="alert-error">{error}</div>;
+  const handleDeleteUser = async (user) => {
+    if (user._id === currentUser._id) {
+      return notify('error', 'You cannot delete your own account');
+    }
+    if (!confirm(`Delete user "${user.name}" (${user.email}) permanently?`)) return;
 
-  const userGrowthData = stats?.userGrowth?.map((item) => ({
-    month: `${item._id.year}-${String(item._id.month).padStart(2, '0')}`,
-    Users: item.count,
-  })) || [];
+    try {
+      const res = await api.delete(`/admin/users/${user._id}`);
+      notify('success', res.data.message);
+      fetchUsers();
+      fetchStats();
+    } catch (err) {
+      notify('error', err.response?.data?.message || 'Failed to delete user');
+    }
+  };
 
-  const txBreakdown = stats?.transactionBreakdown || [];
+  const metrics = stats?.metrics || {
+    totalUsers: 0,
+    activeUsers: 0,
+    adminUsers: 0,
+    totalProducts: 0,
+    totalSales: 0,
+    totalRevenue: 0,
+  };
 
   return (
-    <div className="animate-fade-in">
-      <div className="page-header">
-        <h1 className="page-title">🛡️ Admin Dashboard</h1>
-        <p className="page-subtitle">Platform overview and user management</p>
+    <div className="space-y-6 animate-fade-in pb-12">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold text-white font-display">System Administration & Users</h1>
+        <p className="text-xs text-dark-400 mt-1">Platform governance, user accounts moderation, and administrative audit log</p>
       </div>
 
-      {error && <div className="alert-error mb-4">{error}</div>}
-      {success && <div className="alert-success mb-4">{success}</div>}
-
-      {/* Tabs */}
-      <div className="flex gap-2 mb-6 border-b border-dark-700 pb-0">
-        {['overview', 'users', 'activity'].map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2.5 text-sm font-medium capitalize border-b-2 -mb-px transition-colors ${
-              activeTab === tab
-                ? 'border-navy-500 text-white'
-                : 'border-transparent text-dark-400 hover:text-white'
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
-
-      {activeTab === 'overview' && (
-        <>
-          {/* Stats */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-            {[
-              { label: 'Total Users', value: stats?.stats?.totalUsers, icon: '👥', color: 'from-navy-600/20 to-navy-500/5 border-navy-500/20' },
-              { label: 'Active Users', value: stats?.stats?.activeUsers, icon: '✅', color: 'from-success-600/20 to-success-500/5 border-success-500/20' },
-              { label: 'Total Transactions', value: stats?.stats?.totalTransactions, icon: '↔️', color: 'from-purple-600/20 to-purple-500/5 border-purple-500/20' },
-              { label: 'New This Week', value: stats?.stats?.newUsersThisWeek, icon: '🆕', color: 'from-yellow-600/20 to-yellow-500/5 border-yellow-500/20' },
-            ].map((s) => (
-              <div key={s.label} className={`stat-card bg-gradient-to-br ${s.color} border`}>
-                <div className="text-2xl mb-2">{s.icon}</div>
-                <div className="text-3xl font-bold text-white">{s.value ?? '—'}</div>
-                <div className="text-dark-400 text-sm mt-1">{s.label}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Charts */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="card">
-              <h3 className="text-white font-semibold mb-4">User Growth (Last 6 Months)</h3>
-              {userGrowthData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={220}>
-                  <BarChart data={userGrowthData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                    <XAxis dataKey="month" stroke="#64748b" tick={{ fill: '#64748b', fontSize: 11 }} />
-                    <YAxis stroke="#64748b" tick={{ fill: '#64748b', fontSize: 11 }} />
-                    <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '12px' }} />
-                    <Bar dataKey="Users" fill="#6366f1" radius={[6, 6, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="h-48 flex items-center justify-center text-dark-400">Not enough data</div>
-              )}
-            </div>
-
-            <div className="card">
-              <h3 className="text-white font-semibold mb-4">Transaction Breakdown</h3>
-              {txBreakdown.length > 0 ? (
-                <div className="space-y-3">
-                  {txBreakdown.map((item) => {
-                    const typeColors = { Buy: 'bg-success-500', Sell: 'bg-danger-500', Deposit: 'bg-navy-500', Withdrawal: 'bg-yellow-500' };
-                    const maxCount = Math.max(...txBreakdown.map((t) => t.count));
-                    return (
-                      <div key={item._id} className="flex items-center gap-3">
-                        <div className="w-16 text-dark-300 text-sm">{item._id}</div>
-                        <div className="flex-1 bg-dark-700 rounded-full h-2">
-                          <div
-                            className={`h-2 rounded-full ${typeColors[item._id] || 'bg-dark-500'}`}
-                            style={{ width: `${(item.count / maxCount) * 100}%` }}
-                          />
-                        </div>
-                        <div className="text-dark-400 text-sm w-6 text-right">{item.count}</div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="h-48 flex items-center justify-center text-dark-400">No transactions yet</div>
-              )}
-            </div>
-          </div>
-        </>
+      {feedback.message && (
+        <div className={`p-4 rounded-xl text-sm font-medium ${
+          feedback.type === 'success'
+            ? 'bg-success-500/10 border border-success-500/20 text-success-400'
+            : 'bg-danger-500/10 border border-danger-500/20 text-danger-400'
+        }`}>
+          {feedback.message}
+        </div>
       )}
 
-      {activeTab === 'users' && (
-        <>
-          <div className="mb-5">
+      {/* Admin KPI Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="card p-4">
+          <p className="text-[11px] font-medium text-dark-400 uppercase">Registered Users</p>
+          <p className="text-2xl font-bold text-white mt-1 font-display">{metrics.totalUsers}</p>
+          <span className="text-[10px] text-dark-500">{metrics.activeUsers} Active</span>
+        </div>
+        <div className="card p-4">
+          <p className="text-[11px] font-medium text-dark-400 uppercase">Admins</p>
+          <p className="text-2xl font-bold text-purple-400 mt-1 font-display">{metrics.adminUsers}</p>
+          <span className="text-[10px] text-dark-500">Elevated access</span>
+        </div>
+        <div className="card p-4">
+          <p className="text-[11px] font-medium text-dark-400 uppercase">Catalog Items</p>
+          <p className="text-2xl font-bold text-white mt-1 font-display">{metrics.totalProducts}</p>
+          <span className="text-[10px] text-dark-500">SKUs tracked</span>
+        </div>
+        <div className="card p-4">
+          <p className="text-[11px] font-medium text-dark-400 uppercase">Total Sales</p>
+          <p className="text-2xl font-bold text-cyan-400 mt-1 font-display">{metrics.totalSales}</p>
+          <span className="text-[10px] text-dark-500">Orders placed</span>
+        </div>
+        <div className="card p-4 col-span-2">
+          <p className="text-[11px] font-medium text-dark-400 uppercase">Platform Revenue</p>
+          <p className="text-2xl font-bold text-emerald-400 mt-1 font-display">{formatCurrency(metrics.totalRevenue)}</p>
+          <span className="text-[10px] text-dark-500">Cumulative system billing</span>
+        </div>
+      </div>
+
+      {/* Navigation Tabs */}
+      <div className="flex gap-2 border-b border-dark-700">
+        <button
+          onClick={() => setActiveTab('users')}
+          className={`pb-3 px-4 text-xs font-semibold border-b-2 transition-all ${
+            activeTab === 'users'
+              ? 'border-navy-500 text-white'
+              : 'border-transparent text-dark-400 hover:text-white'
+          }`}
+        >
+          User Accounts Management ({users.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('activity')}
+          className={`pb-3 px-4 text-xs font-semibold border-b-2 transition-all ${
+            activeTab === 'activity'
+              ? 'border-navy-500 text-white'
+              : 'border-transparent text-dark-400 hover:text-white'
+          }`}
+        >
+          Recent Audit Activity
+        </button>
+      </div>
+
+      {activeTab === 'users' ? (
+        <div className="space-y-4">
+          {/* Filters */}
+          <div className="card p-3 flex flex-col sm:flex-row gap-3">
             <input
-              value={userSearch}
-              onChange={(e) => setUserSearch(e.target.value)}
-              className="input-field max-w-sm"
-              placeholder="Search users by name or email..."
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search user by name or email address..."
+              className="input-field text-xs flex-1"
             />
+            <select
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value)}
+              className="select-field text-xs w-full sm:w-44"
+            >
+              <option value="All">All User Roles</option>
+              <option value="admin">Administrators</option>
+              <option value="user">Standard Users / Staff</option>
+            </select>
           </div>
-          <div className="table-container">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Role</th>
-                  <th>Status</th>
-                  <th>Joined</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((u) => (
-                  <tr key={u._id}>
-                    <td className="text-white font-medium">{u.name}</td>
-                    <td>{u.email}</td>
-                    <td>
-                      <span className={`badge ${u.role === 'admin' ? 'badge-navy' : 'badge-success'}`}>
-                        {u.role}
-                      </span>
-                    </td>
-                    <td>
-                      <span className={`badge ${u.isActive ? 'badge-success' : 'badge-danger'}`}>
-                        {u.isActive ? 'Active' : 'Inactive'}
-                      </span>
-                    </td>
-                    <td>{new Date(u.createdAt).toLocaleDateString('en-IN')}</td>
-                    <td>
-                      {u.role !== 'admin' && (
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleToggleUser(u._id, u.name, u.isActive)}
-                            className={`text-xs font-medium px-2 py-1 rounded-lg transition-colors ${u.isActive ? 'text-yellow-400 hover:bg-yellow-500/10' : 'text-success-400 hover:bg-success-500/10'}`}
-                          >
-                            {u.isActive ? 'Deactivate' : 'Activate'}
-                          </button>
-                          <button
-                            onClick={() => handleDeleteUser(u._id, u.name)}
-                            className="text-danger-400 hover:text-danger-300 text-xs font-medium px-2 py-1 rounded-lg hover:bg-danger-500/10 transition-colors"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {users.length === 0 && (
-              <div className="text-center py-10 text-dark-400">No users found</div>
+
+          {/* Users Table */}
+          <div className="card overflow-hidden p-0">
+            {loading ? (
+              <div className="py-12 text-center text-dark-400 text-xs">Loading user accounts...</div>
+            ) : users.length === 0 ? (
+              <div className="py-12 text-center text-dark-400 text-xs">No users matching search criteria</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-dark-750 text-dark-400 uppercase text-[10px] border-b border-dark-700">
+                    <tr>
+                      <th className="p-3.5">User</th>
+                      <th className="p-3.5">Role Permission</th>
+                      <th className="p-3.5">Account Status</th>
+                      <th className="p-3.5">Joined Date</th>
+                      <th className="p-3.5 text-right">Moderation Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-dark-700/50">
+                    {users.map((u) => {
+                      const isSelf = u._id === currentUser?._id;
+
+                      return (
+                        <tr key={u._id} className="hover:bg-dark-750 transition-colors">
+                          <td className="p-3.5">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-lg bg-dark-700 flex items-center justify-center font-bold text-white text-xs">
+                                {u.name?.[0]?.toUpperCase()}
+                              </div>
+                              <div>
+                                <p className="font-semibold text-white">
+                                  {u.name} {isSelf && <span className="text-[10px] text-navy-400">(You)</span>}
+                                </p>
+                                <span className="text-dark-400 text-[11px]">{u.email}</span>
+                              </div>
+                            </div>
+                          </td>
+
+                          <td className="p-3.5">
+                            <select
+                              value={u.role}
+                              onChange={(e) => handleRoleChange(u, e.target.value)}
+                              disabled={isSelf}
+                              className="bg-dark-700 text-white rounded-lg px-2 py-1 text-xs border border-dark-600 focus:outline-none disabled:opacity-60"
+                            >
+                              <option value="user">User / Staff</option>
+                              <option value="admin">Administrator</option>
+                            </select>
+                          </td>
+
+                          <td className="p-3.5">
+                            <span className={`badge ${
+                              u.isActive ? 'bg-success-500/10 text-success-400 border border-success-500/20' : 'bg-danger-500/10 text-danger-400 border border-danger-500/20'
+                            }`}>
+                              {u.isActive ? 'Active' : 'Deactivated'}
+                            </span>
+                          </td>
+
+                          <td className="p-3.5 text-dark-400">
+                            {new Date(u.createdAt).toLocaleDateString()}
+                          </td>
+
+                          <td className="p-3.5 text-right space-x-2">
+                            <button
+                              onClick={() => handleToggleStatus(u)}
+                              disabled={isSelf}
+                              className={`px-2.5 py-1 text-xs rounded-lg transition-colors font-medium ${
+                                u.isActive
+                                  ? 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-400'
+                                  : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400'
+                              } disabled:opacity-40 disabled:cursor-not-allowed`}
+                            >
+                              {u.isActive ? 'Deactivate' : 'Activate'}
+                            </button>
+
+                            <button
+                              onClick={() => handleDeleteUser(u)}
+                              disabled={isSelf}
+                              className="px-2.5 py-1 text-xs bg-danger-500/10 hover:bg-danger-500/20 text-danger-400 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
-        </>
-      )}
-
-      {activeTab === 'activity' && (
-        <div className="card">
-          <h3 className="text-white font-semibold mb-4">Recent Platform Activity</h3>
-          {stats?.recentTransactions?.length > 0 ? (
-            <div className="space-y-3">
-              {stats.recentTransactions.map((tx) => (
-                <div key={tx._id} className="flex items-center justify-between p-3 bg-dark-700/40 rounded-xl">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span className={`badge flex-shrink-0 ${
-                      tx.type === 'Buy' ? 'badge-success' : tx.type === 'Sell' ? 'badge-danger' : 'badge-navy'
-                    }`}>
-                      {tx.type}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-white text-sm truncate">{tx.assetName || tx.type}</p>
-                      <p className="text-dark-500 text-xs">{tx.user?.name} · {tx.user?.email}</p>
-                    </div>
-                  </div>
-                  <div className="text-right flex-shrink-0 ml-3">
-                    <p className="text-white text-sm font-semibold">₹{Number(tx.amount).toLocaleString('en-IN')}</p>
-                    <p className="text-dark-500 text-xs">{new Date(tx.date).toLocaleDateString('en-IN')}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+        </div>
+      ) : (
+        <div className="card divide-y divide-dark-700/50 p-0 overflow-hidden">
+          {stats?.recentActivities?.length === 0 ? (
+            <div className="py-12 text-center text-dark-400 text-xs">No recent administrative activities recorded</div>
           ) : (
-            <div className="text-center py-10 text-dark-400">No recent activity</div>
+            stats.recentActivities.map((act) => (
+              <div key={act._id} className="p-4 flex items-start gap-3">
+                <span className="text-xl">🔔</span>
+                <div className="min-w-0 flex-1 text-xs">
+                  <p className="font-semibold text-white">{act.title}</p>
+                  <p className="text-dark-300 mt-0.5">{act.message}</p>
+                  <span className="text-[10px] text-dark-500 mt-1 block">
+                    {new Date(act.createdAt).toLocaleString()}
+                  </span>
+                </div>
+              </div>
+            ))
           )}
         </div>
       )}

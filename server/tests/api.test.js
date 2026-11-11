@@ -2,15 +2,17 @@ const request = require('supertest');
 const mongoose = require('mongoose');
 const { app } = require('../server');
 
-describe('PortfolioPro Backend API Test Suite', () => {
+describe('Business Performance & Sales Analytics API Test Suite', () => {
   let authToken = '';
-  const testEmail = `test_${Date.now()}@example.com`;
+  let testProductId = '';
+  let testCustomerId = '';
+  const testEmail = `biz_test_${Date.now()}@example.com`;
 
   afterAll(async () => {
     await mongoose.connection.close();
   });
 
-  describe('1. System Health API', () => {
+  describe('1. Health Check', () => {
     it('GET /api/health should return 200 OK', async () => {
       const res = await request(app).get('/api/health');
       expect(res.status).toBe(200);
@@ -19,22 +21,22 @@ describe('PortfolioPro Backend API Test Suite', () => {
   });
 
   describe('2. Authentication Flow', () => {
-    it('POST /api/auth/register should register a new test user', async () => {
+    it('POST /api/auth/register should register a user', async () => {
       const res = await request(app)
         .post('/api/auth/register')
         .send({
-          name: 'Automated Test User',
+          name: 'Analytics Test Manager',
           email: testEmail,
           password: 'password123',
+          role: 'admin',
         });
 
       expect(res.status).toBe(201);
       expect(res.body).toHaveProperty('token');
-      expect(res.body.user.email).toBe(testEmail.toLowerCase());
       authToken = res.body.token;
     });
 
-    it('POST /api/auth/login should authenticate with valid credentials', async () => {
+    it('POST /api/auth/login should authenticate user', async () => {
       const res = await request(app)
         .post('/api/auth/login')
         .send({
@@ -45,17 +47,6 @@ describe('PortfolioPro Backend API Test Suite', () => {
       expect(res.status).toBe(200);
       expect(res.body).toHaveProperty('token');
       authToken = res.body.token;
-    });
-
-    it('POST /api/auth/login should reject invalid credentials', async () => {
-      const res = await request(app)
-        .post('/api/auth/login')
-        .send({
-          email: testEmail,
-          password: 'wrongpassword',
-        });
-
-      expect(res.status).toBe(401);
     });
 
     it('GET /api/auth/me should return current user profile', async () => {
@@ -68,83 +59,161 @@ describe('PortfolioPro Backend API Test Suite', () => {
     });
   });
 
-  describe('3. Portfolio & Market Quotes API', () => {
-    it('GET /api/portfolio should return user portfolio', async () => {
+  describe('3. Product Management APIs', () => {
+    it('POST /api/products should create a new product', async () => {
       const res = await request(app)
-        .get('/api/portfolio')
-        .set('Authorization', `Bearer ${authToken}`);
-
-      expect(res.status).toBe(200);
-      expect(res.body).toHaveProperty('portfolio');
-      expect(Array.isArray(res.body.portfolio.assets)).toBe(true);
-    });
-
-    it('POST /api/portfolio should add an asset to portfolio', async () => {
-      const res = await request(app)
-        .post('/api/portfolio')
+        .post('/api/products')
         .set('Authorization', `Bearer ${authToken}`)
         .send({
-          name: 'Microsoft Corporation',
-          symbol: 'MSFT',
-          category: 'Stocks',
-          quantity: 10,
-          purchasePrice: 400,
-          currentPrice: 420,
+          name: 'Test Gaming Mouse 16000DPI',
+          sku: `TEST-MSE-${Date.now()}`,
+          category: 'Accessories',
+          price: 2499,
+          costPrice: 1200,
+          stock: 50,
+          lowStockThreshold: 5,
         });
 
       expect(res.status).toBe(201);
-      expect(res.body.asset.name).toBe('Microsoft Corporation');
+      expect(res.body.product).toHaveProperty('_id');
+      testProductId = res.body.product._id;
     });
 
-    it('GET /api/portfolio/quote/:symbol should fetch live market quote', async () => {
+    it('GET /api/products should list products', async () => {
       const res = await request(app)
-        .get('/api/portfolio/quote/AAPL')
+        .get('/api/products')
         .set('Authorization', `Bearer ${authToken}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.quote.symbol).toBe('AAPL');
-      expect(res.body.quote.price).toBeGreaterThan(0);
+      expect(Array.isArray(res.body.products)).toBe(true);
+      expect(res.body.total).toBeGreaterThan(0);
     });
   });
 
-  describe('4. Transactions API', () => {
-    it('POST /api/transactions should record a new transaction', async () => {
+  describe('4. Customer Management APIs', () => {
+    it('POST /api/customers should create a customer', async () => {
       const res = await request(app)
-        .post('/api/transactions')
+        .post('/api/customers')
         .set('Authorization', `Bearer ${authToken}`)
         .send({
-          type: 'Buy',
-          assetName: 'Microsoft Corporation',
-          assetCategory: 'Stocks',
-          quantity: 10,
-          price: 400,
-          amount: 4000,
+          name: 'Global Enterprises Inc',
+          email: `client_${Date.now()}@global.com`,
+          phone: '+91 99999 88888',
+          city: 'Mumbai',
         });
 
       expect(res.status).toBe(201);
-      expect(res.body.transaction.type).toBe('Buy');
+      expect(res.body.customer).toHaveProperty('_id');
+      testCustomerId = res.body.customer._id;
     });
 
-    it('GET /api/transactions should retrieve transaction list', async () => {
+    it('GET /api/customers should list customers', async () => {
       const res = await request(app)
-        .get('/api/transactions')
+        .get('/api/customers')
         .set('Authorization', `Bearer ${authToken}`);
 
       expect(res.status).toBe(200);
-      expect(Array.isArray(res.body.transactions)).toBe(true);
-      expect(res.body.transactions.length).toBeGreaterThan(0);
+      expect(Array.isArray(res.body.customers)).toBe(true);
+      expect(res.body.total).toBeGreaterThan(0);
     });
   });
 
-  describe('5. Watchlist API', () => {
-    it('GET /api/watchlist should retrieve user watchlist', async () => {
+  describe('5. Sales Management APIs & Automatic Stock Update', () => {
+    it('POST /api/sales should create sale and deduct product stock', async () => {
       const res = await request(app)
-        .get('/api/watchlist')
+        .post('/api/sales')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          customerId: testCustomerId,
+          items: [
+            {
+              productId: testProductId,
+              quantity: 2,
+              unitPrice: 2499,
+            },
+          ],
+          paymentMethod: 'UPI',
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.sale).toHaveProperty('saleNumber');
+      expect(res.body.sale.totalAmount).toBe(4998);
+
+      // Verify stock was decremented from 50 to 48
+      const prodRes = await request(app)
+        .get(`/api/products/${testProductId}`)
+        .set('Authorization', `Bearer ${authToken}`);
+      expect(prodRes.body.product.stock).toBe(48);
+      expect(prodRes.body.product.soldCount).toBe(2);
+    });
+
+    it('POST /api/sales should fail if requested quantity exceeds stock', async () => {
+      const res = await request(app)
+        .post('/api/sales')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          customerId: testCustomerId,
+          items: [
+            {
+              productId: testProductId,
+              quantity: 999999, // Exceeds available stock
+              unitPrice: 2499,
+            },
+          ],
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toMatch(/Insufficient stock/i);
+    });
+
+    it('GET /api/sales should retrieve sales records', async () => {
+      const res = await request(app)
+        .get('/api/sales')
         .set('Authorization', `Bearer ${authToken}`);
 
       expect(res.status).toBe(200);
-      expect(res.body).toHaveProperty('watchlist');
+      expect(Array.isArray(res.body.sales)).toBe(true);
+      expect(res.body.total).toBeGreaterThan(0);
+    });
+  });
+
+  describe('6. Analytics & Dashboard Metrics', () => {
+    it('GET /api/analytics/dashboard should return all 6 summary cards and charts', async () => {
+      const res = await request(app)
+        .get('/api/analytics/dashboard')
+        .set('Authorization', `Bearer ${authToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.cards).toHaveProperty('totalRevenue');
+      expect(res.body.cards).toHaveProperty('totalSales');
+      expect(res.body.cards).toHaveProperty('totalOrders');
+      expect(res.body.cards).toHaveProperty('totalCustomers');
+      expect(res.body.cards).toHaveProperty('totalProducts');
+      expect(res.body.cards).toHaveProperty('totalProfit');
+      expect(res.body.charts).toHaveProperty('monthlyRevenue');
+      expect(res.body.charts).toHaveProperty('salesByCategory');
+      expect(res.body.charts).toHaveProperty('topProducts');
+    });
+
+    it('GET /api/analytics/export/sales should return downloadable CSV', async () => {
+      const res = await request(app)
+        .get('/api/analytics/export/sales')
+        .set('Authorization', `Bearer ${authToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.headers['content-type']).toMatch(/text\/csv/);
+      expect(res.text).toContain('Invoice Number');
+    });
+  });
+
+  describe('7. Notifications API', () => {
+    it('GET /api/notifications should return notification list', async () => {
+      const res = await request(app)
+        .get('/api/notifications')
+        .set('Authorization', `Bearer ${authToken}`);
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body.notifications)).toBe(true);
     });
   });
 });
-

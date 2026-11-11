@@ -1,25 +1,29 @@
 const User = require('../models/User');
-const Portfolio = require('../models/Portfolio');
-const Transaction = require('../models/Transaction');
-const Watchlist = require('../models/Watchlist');
+const Product = require('../models/Product');
+const Customer = require('../models/Customer');
+const Sale = require('../models/Sale');
+const Notification = require('../models/Notification');
 
-// @desc    Get all users (admin)
+// @desc    Get all users (admin only)
 // @route   GET /api/admin/users
 // @access  Admin
 const getUsers = async (req, res) => {
   try {
-    const { search, page = 1, limit = 20 } = req.query;
+    const { search, role, page = 1, limit = 50 } = req.query;
 
-    const filter = {};
+    const query = {};
     if (search) {
-      filter.$or = [
+      query.$or = [
         { name: { $regex: search, $options: 'i' } },
         { email: { $regex: search, $options: 'i' } },
       ];
     }
+    if (role && role !== 'All') {
+      query.role = role;
+    }
 
-    const total = await User.countDocuments(filter);
-    const users = await User.find(filter)
+    const total = await User.countDocuments(query);
+    const users = await User.find(query)
       .select('-password')
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
@@ -31,37 +35,37 @@ const getUsers = async (req, res) => {
   }
 };
 
-// @desc    Get platform statistics (admin)
+// @desc    Get admin statistics
 // @route   GET /api/admin/stats
 // @access  Admin
-const getStats = async (req, res) => {
+const getAdminStats = async (req, res) => {
   try {
     const totalUsers = await User.countDocuments();
     const activeUsers = await User.countDocuments({ isActive: true });
     const adminUsers = await User.countDocuments({ role: 'admin' });
-    const totalTransactions = await Transaction.countDocuments();
-    const totalPortfolios = await Portfolio.countDocuments();
-    const totalWatchlists = await Watchlist.countDocuments();
+    const totalProducts = await Product.countDocuments();
+    const totalCustomers = await Customer.countDocuments();
+    const totalSales = await Sale.countDocuments();
 
-    // Recent users (last 7 days)
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    const newUsersThisWeek = await User.countDocuments({ createdAt: { $gte: sevenDaysAgo } });
-
-    // Recent transactions
-    const recentTransactions = await Transaction.find()
-      .sort({ createdAt: -1 })
-      .limit(10)
-      .populate('user', 'name email');
-
-    // Transaction type breakdown
-    const transactionBreakdown = await Transaction.aggregate([
-      { $group: { _id: '$type', count: { $sum: 1 }, totalAmount: { $sum: '$amount' } } },
+    const revenueResult = await Sale.aggregate([
+      { $group: { _id: null, total: { $sum: '$totalAmount' }, profit: { $sum: '$totalProfit' } } },
     ]);
+    const totalRevenue = revenueResult[0]?.total || 0;
+    const totalProfit = revenueResult[0]?.profit || 0;
 
-    // User registration per month (last 6 months)
+    // Recent user signups (last 30 days)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const newUsers = await User.countDocuments({ createdAt: { $gte: thirtyDaysAgo } });
+
+    // Recent audit activities (from Notifications & Sales)
+    const recentActivities = await Notification.find()
+      .sort({ createdAt: -1 })
+      .limit(10);
+
+    // Monthly user growth
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-
     const userGrowth = await User.aggregate([
       { $match: { createdAt: { $gte: sixMonthsAgo } } },
       {
@@ -74,35 +78,35 @@ const getStats = async (req, res) => {
     ]);
 
     res.json({
-      stats: {
+      metrics: {
         totalUsers,
         activeUsers,
         adminUsers,
-        totalTransactions,
-        totalPortfolios,
-        totalWatchlists,
-        newUsersThisWeek,
+        newUsers,
+        totalProducts,
+        totalCustomers,
+        totalSales,
+        totalRevenue: Math.round(totalRevenue),
+        totalProfit: Math.round(totalProfit),
       },
-      transactionBreakdown,
       userGrowth,
-      recentTransactions,
+      recentActivities,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// @desc    Toggle user active status (admin)
+// @desc    Toggle user active status
 // @route   PUT /api/admin/users/:id/toggle
 // @access  Admin
 const toggleUserStatus = async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
-
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    if (user.role === 'admin') {
-      return res.status(403).json({ message: 'Cannot deactivate admin accounts' });
+    if (user._id.toString() === req.user._id.toString()) {
+      return res.status(400).json({ message: 'You cannot deactivate your own account' });
     }
 
     user.isActive = !user.isActive;
@@ -117,29 +121,57 @@ const toggleUserStatus = async (req, res) => {
   }
 };
 
-// @desc    Delete user (admin)
-// @route   DELETE /api/admin/users/:id
+// @desc    Update user role
+// @route   PUT /api/admin/users/:id/role
 // @access  Admin
-const deleteUser = async (req, res) => {
+const updateUserRole = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
-
-    if (!user) return res.status(404).json({ message: 'User not found' });
-
-    if (user.role === 'admin') {
-      return res.status(403).json({ message: 'Cannot delete admin accounts' });
+    const { role } = req.body;
+    if (!['user', 'admin'].includes(role)) {
+      return res.status(400).json({ message: 'Invalid role. Must be user or admin' });
     }
 
-    // Delete related data
-    await Portfolio.deleteOne({ user: user._id });
-    await Transaction.deleteMany({ user: user._id });
-    await Watchlist.deleteOne({ user: user._id });
-    await user.deleteOne();
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
 
-    res.json({ message: 'User and all associated data deleted successfully' });
+    if (user._id.toString() === req.user._id.toString() && role !== 'admin') {
+      return res.status(400).json({ message: 'You cannot revoke your own admin rights' });
+    }
+
+    user.role = role;
+    await user.save();
+
+    res.json({ message: `Role updated to "${role}"`, user });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-module.exports = { getUsers, getStats, toggleUserStatus, deleteUser };
+// @desc    Delete user
+// @route   DELETE /api/admin/users/:id
+// @access  Admin
+const deleteUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    if (user._id.toString() === req.user._id.toString()) {
+      return res.status(400).json({ message: 'You cannot delete your own account' });
+    }
+
+    const name = user.name;
+    await user.deleteOne();
+
+    res.json({ message: `User "${name}" deleted successfully` });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = {
+  getUsers,
+  getAdminStats,
+  toggleUserStatus,
+  updateUserRole,
+  deleteUser,
+};

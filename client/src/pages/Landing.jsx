@@ -3,41 +3,41 @@ import { Link } from 'react-router-dom';
 const features = [
   {
     icon: '📊',
-    title: 'Real-Time Dashboard',
-    desc: 'Get a live overview of your entire portfolio with interactive charts and performance metrics.',
+    title: 'Executive Sales Dashboard',
+    desc: 'Live key performance indicators: gross revenue, net profits, sales volume, order counts, and category breakdowns.',
   },
   {
-    icon: '💼',
-    title: 'Portfolio Management',
-    desc: 'Track stocks, mutual funds, ETFs, bonds and other assets all in one place.',
+    icon: '📦',
+    title: 'Inventory & Product Catalog',
+    desc: 'Track available stock, unit costs, pricing margins, automated low-stock warnings, and SKU sales velocity.',
   },
   {
-    icon: '↔️',
-    title: 'Transaction History',
-    desc: 'Log every buy, sell, deposit and withdrawal with detailed records and filters.',
+    icon: '💳',
+    title: 'Sales & Invoicing Pipeline',
+    desc: 'Process customer sales with real-time stock deduction, negative inventory guards, and order receipts.',
   },
   {
-    icon: '👁️',
-    title: 'Watchlist',
-    desc: 'Monitor assets you are interested in before making investment decisions.',
+    icon: '👥',
+    title: 'Customer Intelligence',
+    desc: 'Directory of enterprise accounts, lifetime spend tracking, order frequencies, and full purchase histories.',
   },
   {
-    icon: '🔔',
-    title: 'Real-Time Notifications',
-    desc: 'Instant Socket.IO-powered alerts when portfolio events occur.',
+    icon: '📈',
+    title: 'Deep-Dive Analytics',
+    desc: 'Time-series revenue velocity charts, category distributions, payment method breakdowns, and date range filters.',
   },
   {
-    icon: '🛡️',
-    title: 'Secure & Private',
-    desc: 'JWT authentication, bcrypt hashing, and role-based access control.',
+    icon: '📑',
+    title: 'Data & Report Exports',
+    desc: 'Instant one-click exports of sales invoices, inventory levels, and customer lifetime value directly to CSV.',
   },
 ];
 
 const stats = [
-  { label: 'Asset Types', value: '5+' },
-  { label: 'Transaction Types', value: '4' },
-  { label: 'Real-time Updates', value: '⚡' },
-  { label: 'Secure APIs', value: '🔒' },
+  { label: 'Active Modules', value: '7+' },
+  { label: 'Real-Time Sync', value: '⚡ Socket.IO' },
+  { label: 'Database Engine', value: '🍃 MongoDB' },
+  { label: 'Security & Auth', value: '🔒 JWT & Roles' },
 ];
 
 const CURRENT_YEAR = new Date().getFullYear();
@@ -49,14 +49,14 @@ const Landing = () => {
       <nav className="fixed top-0 left-0 right-0 z-50 bg-dark-900/80 backdrop-blur-md border-b border-dark-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-navy-500 to-purple-600 flex items-center justify-center">
-              <span className="text-white font-bold text-sm">P</span>
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-navy-500 to-indigo-600 flex items-center justify-center font-bold text-sm shadow-md shadow-navy-600/30">
+              BA
             </div>
-            <span className="font-display font-bold text-white text-xl">PortfolioPro</span>
+            <span className="font-display font-bold text-white text-lg">BizAnalytics</span>
           </div>
           <div className="flex items-center gap-3">
             <Link to="/login" className="btn-secondary btn-sm">
-              Log In
+              Sign In
             </Link>
             <Link to="/register" className="btn-primary btn-sm">
               Get Started
@@ -67,115 +67,83 @@ const Landing = () => {
 
       {/* Hero */}
       <section className="relative pt-32 pb-20 px-4 overflow-hidden">
-        {/* Gradient orbs */}
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-navy-600/20 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute top-1/3 right-1/4 w-80 h-80 bg-purple-600/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-1/3 right-1/4 w-80 h-80 bg-indigo-600/15 rounded-full blur-3xl pointer-events-none" />
 
         <div className="max-w-4xl mx-auto text-center relative z-10">
-          <div className="inline-flex items-center gap-2 bg-navy-500/10 border border-navy-500/20 rounded-full px-4 py-2 text-navy-400 text-sm font-medium mb-6">
-            <span className="w-2 h-2 rounded-full bg-success-400 animate-pulse-slow"></span>
-            Professional Portfolio Management
+          <div className="inline-flex items-center gap-2 bg-navy-500/10 border border-navy-500/20 rounded-full px-4 py-1.5 text-navy-400 text-xs font-semibold mb-6">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            Business Performance & Sales Analytics Platform
           </div>
 
-          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-display font-extrabold mb-6 leading-tight">
-            Manage Your <br />
-            <span className="bg-gradient-to-r from-navy-400 via-purple-400 to-navy-300 bg-clip-text text-transparent">
-              Investments
+          <h1 className="text-4xl sm:text-6xl font-display font-extrabold mb-6 leading-tight tracking-tight">
+            Data-Driven Intelligence for <br />
+            <span className="bg-gradient-to-r from-navy-400 via-indigo-300 to-emerald-400 bg-clip-text text-transparent">
+              Revenue & Sales Growth
             </span>
-            <br /> Like a Pro
           </h1>
 
-          <p className="text-xl text-dark-300 max-w-2xl mx-auto mb-10 leading-relaxed">
-            PortfolioPro gives you a comprehensive view of your investment portfolio with real-time
-            dashboards, transaction tracking, watchlists and smart analytics — all in one place.
+          <p className="text-base sm:text-lg text-dark-300 max-w-2xl mx-auto mb-10 leading-relaxed">
+            Monitor real-time business health, track product inventory, record sales with automatic stock deduction, analyze customer lifetime spend, and export audit reports.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/register" className="btn-primary btn-lg inline-flex items-center gap-2">
-              Start for Free
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-              </svg>
+            <Link to="/login" className="btn-primary btn-lg inline-flex items-center justify-center gap-2">
+              Launch Live Platform →
             </Link>
-            <Link to="/login" className="btn-secondary btn-lg">
-              Sign In
+            <Link to="/register" className="btn-secondary btn-lg inline-flex items-center justify-center">
+              Create New Account
             </Link>
           </div>
 
-          {/* Stats strip */}
-          <div className="mt-16 grid grid-cols-2 sm:grid-cols-4 gap-6">
-            {stats.map((s) => (
-              <div key={s.label} className="glass-card p-4">
-                <div className="text-3xl font-bold text-white mb-1">{s.value}</div>
-                <div className="text-dark-400 text-sm">{s.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section className="py-20 px-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-14">
-            <h2 className="text-4xl font-display font-bold text-white mb-4">
-              Everything You Need
-            </h2>
-            <p className="text-dark-400 text-lg max-w-2xl mx-auto">
-              A complete toolkit for tracking and managing your investment portfolio.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.map((f) => (
-              <div key={f.title} className="card-hover group">
-                <div className="w-12 h-12 rounded-xl bg-navy-500/10 flex items-center justify-center text-2xl mb-4 group-hover:bg-navy-500/20 transition-colors">
-                  {f.icon}
-                </div>
-                <h3 className="text-white font-semibold text-lg mb-2">{f.title}</h3>
-                <p className="text-dark-400 leading-relaxed text-sm">{f.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="py-20 px-4">
-        <div className="max-w-3xl mx-auto text-center">
-          <div className="card relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-navy-600/20 to-purple-600/10 pointer-events-none" />
-            <div className="relative z-10">
-              <h2 className="text-3xl font-display font-bold text-white mb-4">
-                Ready to take control of your portfolio?
-              </h2>
-              <p className="text-dark-400 mb-8">
-                Join PortfolioPro and start tracking your investments smarter today.
-              </p>
-              <Link to="/register" className="btn-primary btn-lg inline-flex items-center gap-2">
-                Create Free Account
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                </svg>
-              </Link>
+          {/* Seed demo quick links */}
+          <div className="mt-8 p-3 rounded-2xl bg-dark-800/80 border border-dark-700/80 max-w-md mx-auto text-xs text-dark-300 flex items-center justify-around">
+            <div>
+              <span className="text-dark-500 block text-[10px] uppercase font-bold">Admin Demo</span>
+              <span className="text-white font-mono">admin@example.com</span>
+            </div>
+            <div className="w-px h-6 bg-dark-700"></div>
+            <div>
+              <span className="text-dark-500 block text-[10px] uppercase font-bold">Password</span>
+              <span className="text-emerald-400 font-mono">admin123</span>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Stats Counter */}
+      <section className="py-10 border-y border-dark-800 bg-dark-850/50">
+        <div className="max-w-6xl mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+          {stats.map((s, i) => (
+            <div key={i}>
+              <div className="text-2xl sm:text-3xl font-extrabold text-white font-display mb-1">{s.value}</div>
+              <div className="text-xs text-dark-400 font-medium">{s.label}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Feature Cards Grid */}
+      <section className="py-20 px-4 max-w-7xl mx-auto">
+        <div className="text-center mb-16">
+          <h2 className="text-2xl sm:text-3xl font-bold font-display text-white">Full-Stack Business Architecture</h2>
+          <p className="text-dark-400 text-sm mt-2">Engineered with React, Node.js, Express, MongoDB, and Socket.IO</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {features.map((f, i) => (
+            <div key={i} className="card p-6 hover:border-dark-600 transition-all">
+              <div className="text-3xl mb-3">{f.icon}</div>
+              <h3 className="text-base font-bold text-white mb-2">{f.title}</h3>
+              <p className="text-xs text-dark-400 leading-relaxed">{f.desc}</p>
+            </div>
+          ))}
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-dark-700 py-8 px-4">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-navy-500 to-purple-600 flex items-center justify-center">
-              <span className="text-white font-bold text-xs">P</span>
-            </div>
-            <span className="font-display font-bold text-white">PortfolioPro</span>
-          </div>
-          <p className="text-dark-500 text-sm">
-            © {CURRENT_YEAR} PortfolioPro. Built for academic demonstration purposes.
-          </p>
-        </div>
+      <footer className="border-t border-dark-800 py-8 px-4 text-center text-xs text-dark-500">
+        © {CURRENT_YEAR} Business Performance & Sales Analytics Platform. All rights reserved.
       </footer>
     </div>
   );

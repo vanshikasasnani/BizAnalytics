@@ -5,30 +5,20 @@ import useSocket from '../hooks/useSocket';
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: '📊' },
-  { to: '/portfolio', label: 'Portfolio', icon: '💼' },
-  { to: '/transactions', label: 'Transactions', icon: '↔️' },
-  { to: '/watchlist', label: 'Watchlist', icon: '👁️' },
-  { to: '/profile', label: 'Profile', icon: '👤' },
+  { to: '/products', label: 'Products', icon: '📦' },
+  { to: '/sales', label: 'Sales', icon: '💳' },
+  { to: '/customers', label: 'Customers', icon: '👥' },
+  { to: '/analytics', label: 'Analytics', icon: '📈' },
+  { to: '/reports', label: 'Reports', icon: '📑' },
+  { to: '/notifications', label: 'Notifications', icon: '🔔' },
+  { to: '/settings', label: 'Settings', icon: '⚙️' },
 ];
-
-const NotificationIcon = ({ count }) => (
-  <span className="relative">
-    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-    </svg>
-    {count > 0 && (
-      <span className="absolute -top-1.5 -right-1.5 bg-danger-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
-        {count > 9 ? '9+' : count}
-      </span>
-    )}
-  </span>
-);
 
 const Navbar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const { notifications, dismissNotification, clearAll } = useSocket();
+  const { notifications, unreadCount, markAsRead, clearAll } = useSocket();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const notifRef = useRef(null);
@@ -46,167 +36,250 @@ const Navbar = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/');
+    navigate('/login');
+  };
+
+  const getPageTitle = () => {
+    const path = location.pathname;
+    if (path.startsWith('/products')) return 'Product Management';
+    if (path.startsWith('/sales')) return 'Sales & Transactions';
+    if (path.startsWith('/customers')) return 'Customer Directory';
+    if (path.startsWith('/analytics')) return 'Performance Analytics';
+    if (path.startsWith('/reports')) return 'Reports & Data Export';
+    if (path.startsWith('/notifications')) return 'Notifications Center';
+    if (path.startsWith('/admin')) return 'Admin & User Management';
+    if (path.startsWith('/settings')) return 'Account Settings';
+    return 'Business Overview';
   };
 
   const getTypeIcon = (type) => {
-    if (type === 'asset_added') return '📈';
-    if (type === 'transaction_created') return '💸';
-    if (type === 'portfolio_updated') return '🔄';
+    if (type === 'sale') return '💰';
+    if (type === 'product') return '📦';
+    if (type === 'low_stock') return '⚠️';
+    if (type === 'customer') return '👤';
     return '🔔';
   };
 
   return (
     <>
+      {/* Mobile Overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-dark-950/80 backdrop-blur-sm z-30 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
       <aside
         className={`fixed left-0 top-0 h-full z-40 flex flex-col bg-dark-800 border-r border-dark-700 transition-all duration-300 ${
-          sidebarOpen ? 'w-64' : 'w-16 lg:w-64'
+          sidebarOpen ? 'w-64' : 'w-0 lg:w-64 -translate-x-full lg:translate-x-0'
         }`}
       >
-        {/* Logo */}
-        <div className="flex items-center gap-3 px-4 py-5 border-b border-dark-700 h-16">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-navy-500 to-purple-600 flex items-center justify-center flex-shrink-0">
-            <span className="text-white font-bold text-sm">P</span>
+        {/* Brand Header */}
+        <div className="flex items-center gap-3 px-5 py-5 border-b border-dark-700 h-16">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-navy-500 to-indigo-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-navy-600/30">
+            <span className="text-white font-extrabold text-base">BA</span>
           </div>
-          <span className={`font-display font-bold text-white text-lg transition-all duration-300 ${sidebarOpen ? 'opacity-100' : 'opacity-0 lg:opacity-100'}`}>
-            PortfolioPro
-          </span>
+          <div className="min-w-0">
+            <span className="font-display font-bold text-white text-base block truncate">
+              BizAnalytics
+            </span>
+            <span className="text-[11px] text-navy-400 font-medium block truncate">
+              Performance Platform
+            </span>
+          </div>
         </div>
 
-        {/* Nav items */}
-        <nav className="flex-1 py-4 px-2 space-y-1">
+        {/* Navigation Links */}
+        <nav className="flex-1 py-4 px-3 space-y-1.5 overflow-y-auto">
           {navItems.map(({ to, label, icon }) => (
             <NavLink
               key={to}
               to={to}
               className={({ isActive }) =>
-                `sidebar-link ${isActive ? 'active' : ''}`
+                `flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 ${
+                  isActive
+                    ? 'bg-navy-600/20 text-navy-400 border border-navy-500/30'
+                    : 'text-dark-300 hover:text-white hover:bg-dark-700/60'
+                }`
               }
               onClick={() => setSidebarOpen(false)}
             >
               <span className="text-lg flex-shrink-0">{icon}</span>
-              <span className={`transition-all duration-300 ${sidebarOpen ? 'opacity-100' : 'opacity-0 lg:opacity-100'}`}>
-                {label}
-              </span>
+              <span className="truncate">{label}</span>
+              {label === 'Notifications' && unreadCount > 0 && (
+                <span className="ml-auto bg-danger-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
             </NavLink>
           ))}
+
+          {/* Admin link */}
           {user?.role === 'admin' && (
-            <NavLink
-              to="/admin"
-              className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
-              onClick={() => setSidebarOpen(false)}
-            >
-              <span className="text-lg flex-shrink-0">🛡️</span>
-              <span className={`transition-all duration-300 ${sidebarOpen ? 'opacity-100' : 'opacity-0 lg:opacity-100'}`}>
-                Admin
+            <div className="pt-2 mt-2 border-t border-dark-700/60">
+              <span className="px-3 text-[11px] font-semibold tracking-wider text-dark-500 uppercase">
+                Administration
               </span>
-            </NavLink>
+              <NavLink
+                to="/admin"
+                className={({ isActive }) =>
+                  `flex items-center gap-3 px-3.5 py-2.5 mt-1 rounded-xl font-medium text-sm transition-all duration-200 ${
+                    isActive
+                      ? 'bg-purple-600/20 text-purple-400 border border-purple-500/30'
+                      : 'text-dark-300 hover:text-white hover:bg-dark-700/60'
+                  }`
+                }
+                onClick={() => setSidebarOpen(false)}
+              >
+                <span className="text-lg flex-shrink-0">🛡️</span>
+                <span className="truncate">User Management</span>
+              </NavLink>
+            </div>
           )}
         </nav>
 
-        {/* User info */}
-        <div className="border-t border-dark-700 p-3">
-          <div className="flex items-center gap-3 px-2 py-2">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-navy-500 to-purple-600 flex items-center justify-center flex-shrink-0">
-              <span className="text-white font-semibold text-xs">{user?.name?.[0]?.toUpperCase()}</span>
+        {/* User Footer & Logout */}
+        <div className="p-3 border-t border-dark-700 bg-dark-850">
+          <div className="flex items-center gap-3 px-2 py-2 mb-2 rounded-xl bg-dark-800 border border-dark-700">
+            <div className="w-8 h-8 rounded-lg bg-navy-600/30 border border-navy-500/30 flex items-center justify-center font-bold text-navy-300 text-xs flex-shrink-0">
+              {user?.name?.[0]?.toUpperCase() || 'U'}
             </div>
-            <div className={`flex-1 min-w-0 transition-all duration-300 ${sidebarOpen ? 'opacity-100' : 'opacity-0 lg:opacity-100'}`}>
-              <p className="text-white text-sm font-medium truncate">{user?.name}</p>
-              <p className="text-dark-400 text-xs truncate">{user?.role === 'admin' ? '🛡️ Admin' : 'User'}</p>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold text-white truncate">{user?.name}</p>
+              <p className="text-[10px] text-dark-400 capitalize truncate">{user?.role} Access</p>
             </div>
           </div>
           <button
             onClick={handleLogout}
-            className={`w-full mt-1 flex items-center gap-3 px-4 py-2.5 rounded-xl text-dark-400 hover:text-danger-400 hover:bg-danger-500/10 transition-all duration-200 text-sm font-medium`}
+            className="w-full flex items-center justify-center gap-2 py-2 px-3 text-xs font-medium text-dark-400 hover:text-danger-400 hover:bg-danger-500/10 rounded-xl transition-all"
           >
-            <span className="text-lg flex-shrink-0">🚪</span>
-            <span className={`transition-all duration-300 ${sidebarOpen ? 'opacity-100' : 'opacity-0 lg:opacity-100'}`}>
-              Logout
-            </span>
+            <span>🚪</span>
+            <span>Sign Out</span>
           </button>
         </div>
       </aside>
 
-      {/* Top bar */}
-      <header className="fixed top-0 right-0 z-30 h-16 flex items-center justify-between px-4 bg-dark-800/80 backdrop-blur-md border-b border-dark-700 transition-all duration-300 lg:left-64 left-16">
-        {/* Mobile burger */}
-        <button
-          className="lg:hidden p-2 rounded-lg text-dark-400 hover:text-white hover:bg-dark-700 transition-colors"
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-        >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
-
-        {/* Page title */}
-        <div className="hidden sm:block">
-          <p className="text-white font-semibold capitalize">
-            {location.pathname.replace('/', '').replace('-', ' ') || 'Dashboard'}
-          </p>
+      {/* Top Navbar */}
+      <header className="fixed top-0 right-0 left-0 lg:left-64 h-16 bg-dark-850/95 backdrop-blur-md border-b border-dark-700 z-20 flex items-center justify-between px-4 sm:px-6">
+        <div className="flex items-center gap-3">
+          {/* Mobile hamburger */}
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="lg:hidden p-2 text-dark-300 hover:text-white hover:bg-dark-700 rounded-lg"
+          >
+            ☰
+          </button>
+          <div>
+            <h1 className="text-base sm:text-lg font-bold text-white truncate font-display">
+              {getPageTitle()}
+            </h1>
+            <span className="hidden sm:inline-block text-[11px] text-dark-400">
+              Live Business Analytics • MongoDB Connected
+            </span>
+          </div>
         </div>
 
-        {/* Right side */}
+        {/* Top Right Controls */}
         <div className="flex items-center gap-3">
-          {/* Notifications */}
+          {/* Notifications Dropdown */}
           <div className="relative" ref={notifRef}>
             <button
               onClick={() => setNotifOpen(!notifOpen)}
-              className="p-2 rounded-xl text-dark-400 hover:text-white hover:bg-dark-700 transition-all duration-200"
+              className="relative p-2 text-dark-300 hover:text-white hover:bg-dark-700 rounded-xl transition-colors"
+              title="Notifications"
             >
-              <NotificationIcon count={notifications.length} />
+              <span className="text-lg">🔔</span>
+              {unreadCount > 0 && (
+                <span className="absolute top-1 right-1 w-4 h-4 bg-danger-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
             </button>
 
             {notifOpen && (
-              <div className="absolute right-0 top-full mt-2 w-80 bg-dark-800 border border-dark-600 rounded-2xl shadow-2xl z-50 animate-fade-in">
-                <div className="flex items-center justify-between px-4 py-3 border-b border-dark-700">
-                  <h3 className="text-white font-semibold text-sm">Notifications</h3>
-                  {notifications.length > 0 && (
-                    <button onClick={clearAll} className="text-dark-400 hover:text-white text-xs transition-colors">
-                      Clear all
+              <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-dark-800 border border-dark-700 rounded-2xl shadow-2xl overflow-hidden z-50 animate-slide-up">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-dark-700 bg-dark-850">
+                  <div className="flex items-center gap-2">
+                    <span className="text-white font-semibold text-sm">Notifications</span>
+                    {unreadCount > 0 && (
+                      <span className="bg-navy-500/20 text-navy-400 text-xs px-2 py-0.5 rounded-full font-medium">
+                        {unreadCount} new
+                      </span>
+                    )}
+                  </div>
+                  {unreadCount > 0 && (
+                    <button
+                      onClick={clearAll}
+                      className="text-xs text-navy-400 hover:text-navy-300"
+                    >
+                      Mark all read
                     </button>
                   )}
                 </div>
-                <div className="max-h-72 overflow-y-auto">
+
+                <div className="max-h-80 overflow-y-auto divide-y divide-dark-700/50">
                   {notifications.length === 0 ? (
-                    <p className="text-dark-400 text-sm text-center py-6">No notifications</p>
+                    <div className="py-8 text-center text-dark-400 text-sm">
+                      No notifications yet
+                    </div>
                   ) : (
                     notifications.map((n) => (
                       <div
-                        key={n.id}
-                        className="flex items-start gap-3 px-4 py-3 hover:bg-dark-700/50 border-b border-dark-700/50 last:border-0 cursor-pointer"
-                        onClick={() => dismissNotification(n.id)}
+                        key={n._id || n.id}
+                        onClick={() => {
+                          if (!n.read) markAsRead(n._id || n.id);
+                          if (n.link) navigate(n.link);
+                          setNotifOpen(false);
+                        }}
+                        className={`p-3.5 hover:bg-dark-700/50 transition-colors cursor-pointer flex gap-3 ${
+                          !n.read ? 'bg-navy-600/5' : ''
+                        }`}
                       >
-                        <span className="text-lg mt-0.5">{getTypeIcon(n.type)}</span>
+                        <span className="text-xl flex-shrink-0">{getTypeIcon(n.type)}</span>
                         <div className="flex-1 min-w-0">
-                          <p className="text-dark-200 text-xs leading-relaxed">{n.message}</p>
-                          <p className="text-dark-500 text-[11px] mt-0.5">
-                            {new Date(n.timestamp).toLocaleTimeString()}
-                          </p>
+                          <p className="text-xs font-semibold text-white truncate">{n.title}</p>
+                          <p className="text-xs text-dark-300 mt-0.5 line-clamp-2">{n.message}</p>
+                          <span className="text-[10px] text-dark-500 mt-1 block">
+                            {new Date(n.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
                         </div>
+                        {!n.read && (
+                          <span className="w-2 h-2 rounded-full bg-navy-400 flex-shrink-0 self-center" />
+                        )}
                       </div>
                     ))
                   )}
+                </div>
+
+                <div className="p-2 border-t border-dark-700 bg-dark-850 text-center">
+                  <button
+                    onClick={() => {
+                      setNotifOpen(false);
+                      navigate('/notifications');
+                    }}
+                    className="text-xs text-navy-400 hover:text-navy-300 font-medium py-1"
+                  >
+                    View All Notifications →
+                  </button>
                 </div>
               </div>
             )}
           </div>
 
-          {/* Avatar */}
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-navy-500 to-purple-600 flex items-center justify-center cursor-pointer">
-            <span className="text-white font-semibold text-xs">{user?.name?.[0]?.toUpperCase()}</span>
+          {/* User Badge */}
+          <div className="hidden sm:flex items-center gap-2 pl-2 border-l border-dark-700">
+            <div className="w-8 h-8 rounded-lg bg-navy-600/30 border border-navy-500/30 flex items-center justify-center font-bold text-navy-300 text-xs">
+              {user?.name?.[0]?.toUpperCase()}
+            </div>
+            <div className="text-left">
+              <span className="text-xs font-semibold text-white block leading-tight">{user?.name}</span>
+              <span className="text-[10px] text-navy-400 uppercase tracking-wider font-medium">{user?.role}</span>
+            </div>
           </div>
         </div>
       </header>
-
-      {/* Mobile overlay */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
     </>
   );
 };

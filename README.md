@@ -1,264 +1,185 @@
-# PortfolioPro — Portfolio Management Platform
+# BizAnalytics — Business Performance & Sales Analytics Platform
 
-A complete, professional **Portfolio Management Platform** built with React + Vite (frontend) and Node.js + Express + MongoDB (backend), featuring real-time notifications via Socket.IO.
-
----
-
-## 🚀 Tech Stack
-
-**Frontend:** React, Vite, Tailwind CSS, React Router DOM, Axios, Recharts, Socket.IO Client  
-**Backend:** Node.js, Express, MongoDB, Mongoose, JWT, bcryptjs, Socket.IO, Nodemon
+A complete, production-ready, full-stack **Business Performance & Sales Analytics Platform** built with **React (Vite) + Tailwind CSS** (frontend) and **Node.js + Express + MongoDB** (backend), featuring real-time alerts via **Socket.IO**.
 
 ---
 
-## 📁 Folder Structure
+## 🚀 Technology Stack
+
+- **Frontend:** React 19, Vite, Tailwind CSS, React Router DOM v7, Axios, Recharts, Headless UI, Socket.IO Client
+- **Backend:** Node.js, Express.js, MongoDB, Mongoose 8, JWT (JSON Web Tokens), bcryptjs, Socket.IO, CORS, dotenv
+- **Testing:** Jest, Supertest (14 passing automated integration tests)
+- **Containerization:** Docker, Docker Compose, Nginx
+
+---
+
+## 📁 Final Folder Structure
 
 ```
 portfolio-management-platform/
-├── client/              # React frontend (Vite)
-│   └── src/
-│       ├── components/  # Navbar, ProtectedRoute
-│       ├── context/     # AuthContext
-│       ├── hooks/       # useSocket
-│       ├── pages/       # All pages
-│       └── services/    # Axios api.js
-└── server/              # Node.js backend
-    ├── config/          # db.js
-    ├── controllers/     # Route handlers
-    ├── middleware/       # Auth, Error middleware
-    ├── models/          # Mongoose schemas
-    ├── routes/          # Express routes
-    └── utils/           # generateToken
+├── client/                      # React 19 + Vite Frontend
+│   ├── src/
+│   │   ├── components/          # Navbar (Sidebar & Topbar), ProtectedRoute
+│   │   ├── context/             # AuthContext (JWT session management)
+│   │   ├── hooks/               # useSocket (Real-time Socket.IO alerts)
+│   │   ├── pages/
+│   │   │   ├── Dashboard.jsx    # 6 KPI cards, 6 charts, recent activity
+│   │   │   ├── Products.jsx     # Catalog & inventory management, stock alerts
+│   │   │   ├── Sales.jsx        # Invoice builder, stock deduction, sale logs
+│   │   │   ├── Customers.jsx    # Customer directory & order history modal
+│   │   │   ├── Analytics.jsx    # Time-series analysis with date range filters
+│   │   │   ├── Reports.jsx      # CSV exports for sales, products, customers
+│   │   │   ├── Notifications.jsx# Real-time notification center
+│   │   │   ├── AdminDashboard.jsx# User moderation & admin stats
+│   │   │   ├── Profile.jsx      # Settings & password update
+│   │   │   ├── Landing.jsx      # Marketing overview & feature showcase
+│   │   │   ├── Login.jsx        # Authentication form
+│   │   │   ├── Register.jsx     # Registration form
+│   │   │   └── NotFound.jsx     # 404 page
+│   │   └── services/            # api.js (Axios instance with auth interceptors)
+│   ├── .env                     # Frontend environment variables
+│   ├── Dockerfile               # Production multi-stage Nginx container
+│   ├── nginx.conf               # Nginx reverse proxy configuration
+│   └── package.json
+├── server/                      # Node.js + Express Backend
+│   ├── config/                  # db.js (Mongoose connection)
+│   ├── controllers/             # Auth, Product, Customer, Sale, Analytics, Notification, Admin
+│   ├── middleware/              # Auth guard (protect, admin), Error handler
+│   ├── models/                  # User, Product, Customer, Sale, Notification schemas
+│   ├── routes/                  # Express REST API routes
+│   ├── tests/                   # api.test.js (Automated Jest/Supertest suite)
+│   ├── utils/                   # generateToken.js
+│   ├── .env                     # Backend environment variables
+│   ├── Dockerfile               # Node.js containerfile
+│   ├── seed.js                  # Comprehensive database seeder
+│   └── server.js                # Express & Socket.IO server entry point
+├── docker-compose.yml           # Multi-container orchestration (Mongo + Server + Client)
+├── render.yaml                  # Cloud deployment blueprint
+├── package.json                 # Root script runner (concurrently)
+└── README.md
 ```
 
 ---
 
-## ⚙️ Setup Instructions
+## ⚙️ Environment Variables
 
-### Step 1 — MongoDB Setup
-
-1. Go to [https://cloud.mongodb.com](https://cloud.mongodb.com) and create a free account
-2. Create a new **cluster**
-3. Create a **database user** (save username and password)
-4. Click **Connect → Connect your application**
-5. Copy the connection string (looks like `mongodb+srv://username:password@cluster.mongodb.net/portfoliopro`)
-6. Open `server/.env` and replace `your_mongodb_connection_string_here` with your actual string
-
-### Step 2 — Configure Environment Variables
-
-Edit `server/.env`:
-
+### Backend (`server/.env`):
 ```env
 PORT=5000
-MONGO_URI=mongodb+srv://your_username:your_password@cluster.mongodb.net/portfoliopro?retryWrites=true&w=majority
-JWT_SECRET=choose_a_long_random_secret_string_here
+MONGO_URI=mongodb://127.0.0.1:27017/portfoliopro
+JWT_SECRET=portfoliopro_jwt_secret_key_2024_change_me
 CLIENT_ORIGIN=http://localhost:5173
 NODE_ENV=development
 ```
 
-### Step 3 — Install & Start Backend
+### Frontend (`client/.env`):
+```env
+VITE_API_URL=http://localhost:5000/api
+VITE_SOCKET_URL=http://localhost:5000
+```
 
+---
+
+## 🍃 MongoDB Connection
+
+1. **Local MongoDB (Default):**
+   The application is pre-configured to connect to local MongoDB on `mongodb://127.0.0.1:27017/portfoliopro`.
+2. **MongoDB Atlas (Cloud):**
+   - Create a free cluster at [cloud.mongodb.com](https://cloud.mongodb.com).
+   - Copy your connection URI (`mongodb+srv://user:pass@cluster.mongodb.net/dbname`).
+   - Replace `MONGO_URI` in `server/.env`.
+
+---
+
+## 🚀 How to Start the Application
+
+### Option 1 — Single Command (Recommended)
+From the root directory:
 ```bash
-cd server
-npm install
+# Start both Backend & Frontend together with color-coded logs
 npm run dev
 ```
 
-The backend will start on `http://localhost:5000`
-
-### Step 4 — Seed Demo Data (Optional but Recommended)
-
-Populate the database with realistic sample portfolios, transactions, watchlists, and demo users:
-
+### Option 2 — Separate Terminals
+**Terminal 1 (Backend):**
 ```bash
-# From server directory
 cd server
-npm run seed
-
-# Or from root directory
-npm run seed
-```
-
-This creates:
-- **Demo User:** `demo@example.com` / `password123` (Preloaded with AAPL, MSFT, VOO, IEF holdings & transactions)
-- **Admin User:** `admin@example.com` / `admin123` (Access to Admin Dashboard at `/admin`)
-
-### Step 5 — Start Frontend
-
-Open a new terminal:
-
-```bash
-cd client
-npm install
 npm run dev
+# Running on http://localhost:5000
 ```
 
-The frontend will start on `http://localhost:5173`
-
----
-
-## ⚡ Quick Start from Root
-
-You can also run commands directly from the root folder:
-
+**Terminal 2 (Frontend):**
 ```bash
-# Seed database
-npm run seed
-
-# Run Backend
-npm run dev:server
-
-# Run Frontend
-npm run dev:client
-```
-
----
-
-## 🌐 URLs
-
-| Service   | URL                     |
-|-----------|-------------------------|
-| Frontend  | http://localhost:5173   |
-| Backend   | http://localhost:5000   |
-| API Root  | http://localhost:5000/api |
-| Health    | http://localhost:5000/api/health |
-
----
-
-## 👤 Registering & Logging In
-
-1. Open `http://localhost:5173`
-2. Click **Get Started** to create an account
-3. Fill in your name, email, and password (min 6 chars)
-4. You'll be redirected to the **Dashboard**
-
-### Creating an Admin Account
-
-You can register with `"role": "admin"` via Postman:
-
-```json
-POST http://localhost:5000/api/auth/register
-{
-  "name": "Admin User",
-  "email": "admin@portfoliopro.com",
-  "password": "admin123",
-  "role": "admin"
-}
-```
-
----
-
-## 🔌 API Endpoints
-
-### Auth
-| Method | Endpoint | Access |
-|--------|----------|--------|
-| POST | /api/auth/register | Public |
-| POST | /api/auth/login | Public |
-| GET | /api/auth/me | Private |
-| PUT | /api/auth/profile | Private |
-| PUT | /api/auth/password | Private |
-
-### Portfolio
-| Method | Endpoint | Access |
-|--------|----------|--------|
-| GET | /api/portfolio | Private |
-| POST | /api/portfolio | Private |
-| GET | /api/portfolio/:id | Private |
-| PUT | /api/portfolio/:id | Private |
-| DELETE | /api/portfolio/:id | Private |
-
-### Transactions
-| Method | Endpoint | Access |
-|--------|----------|--------|
-| GET | /api/transactions | Private |
-| POST | /api/transactions | Private |
-| PUT | /api/transactions/:id | Private |
-| DELETE | /api/transactions/:id | Private |
-
-### Watchlist
-| Method | Endpoint | Access |
-|--------|----------|--------|
-| GET | /api/watchlist | Private |
-| POST | /api/watchlist | Private |
-| PUT | /api/watchlist/:id | Private |
-| DELETE | /api/watchlist/:id | Private |
-
-### Admin (Admin only)
-| Method | Endpoint | Access |
-|--------|----------|--------|
-| GET | /api/admin/users | Admin |
-| GET | /api/admin/stats | Admin |
-| PUT | /api/admin/users/:id/toggle | Admin |
-| DELETE | /api/admin/users/:id | Admin |
-
----
-
-## 🧪 Testing with Postman
-
-1. Import the base URL: `http://localhost:5000`
-2. Register a user via POST `/api/auth/register`
-3. Login via POST `/api/auth/login` → copy the `token`
-4. For protected routes, set **Header**: `Authorization: Bearer <token>`
-
-### Example: Add Asset
-```json
-POST /api/portfolio
-Authorization: Bearer <token>
-
-{
-  "name": "Reliance Industries",
-  "symbol": "RELIANCE",
-  "category": "Stocks",
-  "quantity": 10,
-  "purchasePrice": 2500,
-  "currentPrice": 2800
-}
-```
-
-### Example: Add Transaction
-```json
-POST /api/transactions
-Authorization: Bearer <token>
-
-{
-  "type": "Buy",
-  "assetName": "Reliance Industries",
-  "assetCategory": "Stocks",
-  "quantity": 10,
-  "price": 2500,
-  "amount": 25000
-}
-```
-
----
-
-## 📦 Production Build
-
-```bash
-# Build frontend
 cd client
-npm run build
-
-# Start backend in production
-cd server
-NODE_ENV=production npm start
+npm run dev
+# Running on http://localhost:5173
 ```
 
 ---
 
-## 🔒 Security Notes
+## 👤 Sample Demonstration Credentials
 
-- Passwords are hashed with bcryptjs (10 rounds)
-- JWT tokens expire in 7 days
-- All API routes (except auth) require a valid JWT
-- Admin routes require role === 'admin'
-- Never commit `.env` files to version control
+The database comes pre-seeded with realistic enterprise data (12 products, 11 customers, 25 sales transactions across 6 months).
+
+| Role | Email | Password | Access Level |
+|---|---|---|---|
+| **Administrator** | `admin@example.com` | `admin123` | Full access (Dashboard, Products, Sales, Customers, Analytics, Reports, User Management) |
+| **Business Owner** | `demo@example.com` | `password123` | Full access (Admin privileges) |
+| **Sales Staff** | `staff@example.com` | `staff123` | Operational access (Dashboard, Products, Sales, Customers) |
+
+To re-seed fresh demonstration data at any time:
+```bash
+npm run seed
+```
 
 ---
 
-## 📝 Notes
+## 📊 Dashboard & System Features Explained
 
-- This is an academic demonstration project
-- Prices shown are manually entered / simulated — not live market data
-- Do not use with real financial decisions
+1. **Main Executive Dashboard (`/dashboard`)**:
+   - **6 Summary Cards**: Total Revenue (₹), Total Profit (₹), Total Sales Count, Total Orders, Total Customers, and Total Products (with low-stock indicators).
+   - **6 Recharts Visualizations**:
+     - *Monthly Revenue & Net Profit Area Chart* (historical trend).
+     - *Sales by Category Donut Chart* (department revenue share).
+     - *Sales Growth Rate Line Chart* (% month-over-month velocity).
+     - *Monthly Orders Volume Bar Chart*.
+     - *Top-Selling Products Horizontal Bar Chart*.
+   - **Activity Feeds**: Recent completed sales transactions with status tags, top products, and recent customers.
+
+2. **Product & Inventory Management (`/products`)**:
+   - Add, edit, and delete products with SKU, categories, selling prices, unit cost, and live stock count.
+   - Automatic low-stock detection (badges for In Stock, Low Stock, and Out of Stock).
+   - Full search by name/SKU and category filters.
+
+3. **Sales Management & Invoicing (`/sales`)**:
+   - Order builder allowing multiple product line items.
+   - **Strict Stock Validation**: System prevents transactions if requested quantity exceeds available inventory (ensuring stock cannot become negative).
+   - Automatic stock deduction and customer lifetime spend updates upon sale completion.
+   - Comprehensive invoice breakdown modal with tax, discounts, and net profit calculations.
+
+4. **Customer Directory (`/customers`)**:
+   - Manage business customer contacts, companies, and locations.
+   - Order History Modal displaying lifetime transaction log and spend value per client.
+
+5. **Deep-Dive Analytics (`/analytics`)**:
+   - Filter by Last 7 Days, Last 30 Days, Last 6 Months, This Year, or Custom Date Range.
+   - Daily financial timeline, product-level profit margins, and payment method settlement split.
+
+6. **Data & Report Exports (`/reports`)**:
+   - One-click CSV downloads for Sales Invoices, Product Inventory, and Customer Accounts directly from live MongoDB records.
+
+7. **Real-time Notifications (`/notifications`)**:
+   - Socket.IO-powered real-time toast alerts for new sales, low-stock warnings, and customer registrations.
+
+8. **Admin & User Moderation (`/admin`)**:
+   - View registered users, toggle active/inactive status, assign admin or user roles, and view administrative audit events.
+
+---
+
+## 🧪 Automated Test Suite
+
+Run the automated integration test suite:
+```bash
+npm test
+```
+**Results:** 14 passed out of 14 test cases covering Health, Auth, Products, Customers, Sales, Analytics, and Notifications.
