@@ -66,7 +66,7 @@ const Landing = () => {
       </nav>
 
       {/* Hero */}
-      <section className="relative pt-32 pb-20 px-4 overflow-hidden">
+      <section className="relative pt-32 pb-20 sm:pb-24 px-4 overflow-hidden">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-navy-600/20 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute top-1/3 right-1/4 w-80 h-80 bg-indigo-600/15 rounded-full blur-3xl pointer-events-none" />
 
@@ -94,19 +94,6 @@ const Landing = () => {
             <Link to="/register" className="btn-secondary btn-lg inline-flex items-center justify-center">
               Create New Account
             </Link>
-          </div>
-
-          {/* Seed demo quick links */}
-          <div className="mt-8 p-3 rounded-2xl bg-dark-800/80 border border-dark-700/80 max-w-md mx-auto text-xs text-dark-300 flex items-center justify-around">
-            <div>
-              <span className="text-dark-500 block text-[10px] uppercase font-bold">Admin Demo</span>
-              <span className="text-white font-mono">admin@example.com</span>
-            </div>
-            <div className="w-px h-6 bg-dark-700"></div>
-            <div>
-              <span className="text-dark-500 block text-[10px] uppercase font-bold">Password</span>
-              <span className="text-emerald-400 font-mono">admin123</span>
-            </div>
           </div>
         </div>
       </section>
