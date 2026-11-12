@@ -7,9 +7,11 @@ const validate = require('../middleware/validate');
 
 // Validation rules
 const registerRules = [
-  body('name').trim().notEmpty().withMessage('Name is required'),
-  body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
-  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+  body('name').trim().notEmpty().withMessage('Please enter your full name.'),
+  body('email').isEmail().normalizeEmail().withMessage('Please enter a valid email address.'),
+  body('password')
+    .isLength({ min: 8, max: 8 })
+    .withMessage('Password must be exactly 8 characters.'),
 ];
 
 const loginRules = [

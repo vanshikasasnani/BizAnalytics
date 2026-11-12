@@ -27,7 +27,7 @@ describe('Business Performance & Sales Analytics API Test Suite', () => {
         .send({
           name: 'Analytics Test Manager',
           email: testEmail,
-          password: 'password123',
+          password: 'pass1234',
           role: 'admin',
         });
 
@@ -41,7 +41,7 @@ describe('Business Performance & Sales Analytics API Test Suite', () => {
         .post('/api/auth/login')
         .send({
           email: testEmail,
-          password: 'password123',
+          password: 'pass1234',
         });
 
       expect(res.status).toBe(200);

@@ -80,14 +80,14 @@ describe('Products Page', () => {
     renderProducts();
     await waitFor(() => {
       expect(screen.getByText(/Gaming Laptop Pro/i)).toBeInTheDocument();
-      expect(screen.getByText(/Mechanical Keyboard RGB/i)).toBeInTheDocument();
+      expect(screen.getAllByText(/Mechanical Keyboard RGB/i).length).toBeGreaterThan(0);
     });
   });
 
   it('shows low-stock badge for items below threshold', async () => {
     renderProducts();
     await waitFor(() => {
-      expect(screen.getByText(/low stock/i)).toBeInTheDocument();
+      expect(screen.getAllByText(/low stock/i).length).toBeGreaterThan(0);
     });
   });
 

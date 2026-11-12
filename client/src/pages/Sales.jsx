@@ -441,15 +441,15 @@ const Sales = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white font-display">Sales & Transactions</h1>
-          <p className="text-xs text-dark-400 mt-1">Record new customer purchases with instant stock deduction and invoice generation</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white font-display">Sales</h1>
+          <p className="text-sm text-dark-300 mt-1">Record customer orders, manage sales invoices, and track payments</p>
         </div>
         <button
           onClick={() => setShowNewModal(true)}
-          className="btn-primary flex items-center gap-2 self-start sm:self-auto"
+          className="btn-primary flex items-center gap-2 self-start sm:self-auto text-xs"
         >
           <span>+</span>
-          <span>Record New Sale</span>
+          <span>New Sale</span>
         </button>
       </div>
 

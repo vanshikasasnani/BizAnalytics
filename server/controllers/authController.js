@@ -9,17 +9,24 @@ const register = async (req, res) => {
     const { name, email, password, role } = req.body;
 
     // Validation
-    if (!name || !email || !password) {
-      return res.status(400).json({ message: 'Please fill all required fields' });
+    if (!name) {
+      return res.status(400).json({ message: 'Please enter your full name.' });
     }
-    if (password.length < 6) {
-      return res.status(400).json({ message: 'Password must be at least 6 characters' });
+    if (!email) {
+      return res.status(400).json({ message: 'Please enter a valid email address.' });
+    }
+    const emailRegex = /^\S+@\S+\.\S+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: 'Please enter a valid email address.' });
+    }
+    if (!password || password.length !== 8) {
+      return res.status(400).json({ message: 'Password must be exactly 8 characters.' });
     }
 
     // Check if user exists
     const userExists = await User.findOne({ email: email.toLowerCase() });
     if (userExists) {
-      return res.status(400).json({ message: 'User with this email already exists' });
+      return res.status(400).json({ message: 'This email is already registered.' });
     }
 
     // Only allow admin role if specifically set (for development seeding)
@@ -33,7 +40,7 @@ const register = async (req, res) => {
     });
 
     res.status(201).json({
-      message: 'Registration successful',
+      message: 'Account created successfully.',
       user: {
         _id: user._id,
         name: user.name,
@@ -44,6 +51,9 @@ const register = async (req, res) => {
     });
   } catch (error) {
     console.error('Register error:', error.message);
+    if (error.code === 11000) {
+      return res.status(400).json({ message: 'This email is already registered.' });
+    }
     res.status(500).json({ message: error.message || 'Server error' });
   }
 };

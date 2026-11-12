@@ -270,10 +270,10 @@ const Customers = () => {
   const handleSaveCustomer = async (form) => {
     if (editCustomer) {
       await api.put(`/customers/${editCustomer._id}`, form);
-      notify('success', `Customer "${form.name}" updated`);
+      notify('success', `Customer "${form.name}" updated successfully`);
     } else {
       await api.post('/customers', form);
-      notify('success', `Customer "${form.name}" registered`);
+      notify('success', `Customer "${form.name}" registered successfully`);
     }
     fetchCustomers();
   };
@@ -298,18 +298,18 @@ const Customers = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white font-display">Customer Management</h1>
-          <p className="text-xs text-dark-400 mt-1">Directory of client accounts, total order volumes, and lifetime spend history</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white font-display">Customers</h1>
+          <p className="text-sm text-dark-300 mt-1">Manage customer contacts, order history, and account details</p>
         </div>
         <button
           onClick={() => {
             setEditCustomer(null);
             setShowModal(true);
           }}
-          className="btn-primary flex items-center gap-2 self-start sm:self-auto"
+          className="btn-primary flex items-center gap-2 self-start sm:self-auto text-xs"
         >
           <span>+</span>
-          <span>Add New Customer</span>
+          <span>Add Customer</span>
         </button>
       </div>
 
@@ -372,7 +372,7 @@ const Customers = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-dark-700/50">
-                {customers.map((c) => (
+                {Array.from(new Map(customers.map((c) => [c.email || c._id, c])).values()).map((c) => (
                   <tr key={c._id} className="hover:bg-dark-750 transition-colors">
                     <td className="py-3.5 px-4">
                       <p className="font-semibold text-white text-sm">{c.name}</p>

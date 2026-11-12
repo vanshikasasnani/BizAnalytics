@@ -7,10 +7,12 @@ const api = axios.create({
   },
 });
 
-// Request interceptor - attach token
+// Request interceptor - attach token (checks sessionStorage first for tab-isolation, then localStorage)
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('portfoliopro_token');
+    const token =
+      sessionStorage.getItem('portfoliopro_token') ||
+      localStorage.getItem('portfoliopro_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -24,6 +26,8 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
+      sessionStorage.removeItem('portfoliopro_token');
+      sessionStorage.removeItem('portfoliopro_user');
       localStorage.removeItem('portfoliopro_token');
       localStorage.removeItem('portfoliopro_user');
       window.location.href = '/login';

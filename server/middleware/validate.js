@@ -10,13 +10,17 @@ const { validationResult } = require('express-validator');
 const validate = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    const errorList = errors.array().map((e) => ({ field: e.path, message: e.msg }));
+    // Provide the first specific validation error message instead of generic "Validation failed"
+    const firstErrorMessage = errorList[0]?.message || 'Validation failed';
     return res.status(422).json({
-      message: 'Validation failed',
-      errors: errors.array().map((e) => ({ field: e.path, message: e.msg })),
+      message: firstErrorMessage,
+      errors: errorList,
     });
   }
   next();
 };
 
 module.exports = validate;
+
 

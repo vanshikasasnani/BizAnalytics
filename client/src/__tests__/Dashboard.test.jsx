@@ -79,10 +79,10 @@ describe('Dashboard Page', () => {
     expect(document.body).toBeTruthy();
   });
 
-  it('renders "Dashboard" or main heading', async () => {
+  it('renders "Business Overview" main heading', async () => {
     renderDashboard();
     await waitFor(() => {
-      expect(screen.getByText(/business performance & analytics/i)).toBeInTheDocument();
+      expect(screen.getByText(/business overview/i)).toBeInTheDocument();
     });
   });
 
@@ -90,7 +90,7 @@ describe('Dashboard Page', () => {
     renderDashboard();
     await waitFor(() => {
       expect(screen.getByText(/total revenue/i)).toBeInTheDocument();
-      expect(screen.getByText(/net profit/i)).toBeInTheDocument();
+      expect(screen.getByText(/total orders/i)).toBeInTheDocument();
     });
   });
 });

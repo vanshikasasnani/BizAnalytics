@@ -38,15 +38,15 @@ const Login = () => {
           <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-purple-600/15 rounded-full blur-3xl" />
         </div>
         <div className="relative z-10 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-navy-500 to-purple-600 flex items-center justify-center mx-auto mb-6">
-            <span className="text-white font-bold text-2xl">P</span>
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-navy-500 to-indigo-600 flex items-center justify-center mx-auto mb-6 shadow-lg shadow-navy-600/30">
+            <span className="text-white font-extrabold text-2xl font-display">BA</span>
           </div>
-          <h1 className="text-4xl font-display font-bold text-white mb-4">PortfolioPro</h1>
+          <h1 className="text-4xl font-display font-bold text-white mb-4">BizAnalytics</h1>
           <p className="text-dark-300 text-lg max-w-xs mx-auto">
-            Your professional investment portfolio management platform.
+            Business performance and sales analytics platform.
           </p>
           <div className="mt-10 space-y-4">
-            {['Track all your investments', 'Real-time notifications', 'Secure & private'].map((f) => (
+            {['Real-time sales tracking', 'Inventory & stock control', 'Instant reports & analytics'].map((f) => (
               <div key={f} className="flex items-center gap-3 text-dark-300">
                 <span className="text-success-400">✓</span>
                 <span>{f}</span>
@@ -60,15 +60,15 @@ const Login = () => {
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-md">
           <div className="lg:hidden flex items-center gap-3 mb-8">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-navy-500 to-purple-600 flex items-center justify-center">
-              <span className="text-white font-bold text-sm">P</span>
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-navy-500 to-indigo-600 flex items-center justify-center shadow-md">
+              <span className="text-white font-bold text-sm">BA</span>
             </div>
-            <span className="font-display font-bold text-white text-xl">PortfolioPro</span>
+            <span className="font-display font-bold text-white text-xl">BizAnalytics</span>
           </div>
 
           <div className="card">
             <h2 className="text-2xl font-display font-bold text-white mb-2">Welcome back</h2>
-            <p className="text-dark-400 text-sm mb-6">Enter your credentials to access your portfolio</p>
+            <p className="text-dark-400 text-sm mb-6">Enter your credentials to access your business dashboard</p>
 
             {error && <div className="alert-error mb-4">{error}</div>}
 
@@ -124,8 +124,15 @@ const Login = () => {
 
           {/* Demo credentials hint */}
           <div className="mt-4 p-4 bg-dark-800/50 border border-dark-700 rounded-xl text-xs text-dark-400">
-            <p className="font-medium text-dark-300 mb-1">🧪 Demo Access</p>
-            <p>Register a new account to explore the platform, or ask your admin for credentials.</p>
+            <p className="font-semibold text-white mb-2">🔑 Demo Credentials</p>
+            <div className="space-y-1">
+              <p>
+                <strong className="text-dark-200">Admin:</strong> <span className="text-navy-300 font-mono">admin@example.com</span> / <span className="font-mono">admin123</span>
+              </p>
+              <p>
+                <strong className="text-dark-200">Staff / User:</strong> <span className="text-emerald-300 font-mono">staff@example.com</span> / <span className="font-mono">staff123</span>
+              </p>
+            </div>
           </div>
         </div>
       </div>

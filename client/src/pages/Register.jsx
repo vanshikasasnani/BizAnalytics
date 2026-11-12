@@ -5,29 +5,64 @@ import { useAuth } from '../context/AuthContext';
 const Register = () => {
   const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '' });
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+    if (error) setError('');
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
 
-    if (!form.name || !form.email || !form.password || !form.confirmPassword) {
-      return setError('Please fill in all fields');
+    // Full name check
+    if (!form.name || !form.name.trim()) {
+      return setError('Please enter your full name.');
     }
-    if (form.name.length < 2) return setError('Name must be at least 2 characters');
-    if (form.password.length < 6) return setError('Password must be at least 6 characters');
-    if (form.password !== form.confirmPassword) return setError('Passwords do not match');
+
+    // Email format check
+    if (!form.email || !form.email.trim()) {
+      return setError('Please enter a valid email address.');
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(form.email.trim())) {
+      return setError('Please enter a valid email address.');
+    }
+
+    // Password exactly 8 characters
+    if (form.password.length !== 8) {
+      return setError('Password must be exactly 8 characters.');
+    }
+
+    // Confirm password exactly 8 characters
+    if (form.confirmPassword.length !== 8) {
+      return setError('Password must be exactly 8 characters.');
+    }
+
+    // Passwords match
+    if (form.password !== form.confirmPassword) {
+      return setError('Passwords do not match.');
+    }
 
     setLoading(true);
     try {
-      await register(form.name, form.email, form.password);
-      navigate('/dashboard');
+      const data = await register(form.name.trim(), form.email.trim(), form.password);
+      setSuccess('Account created successfully.');
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 1000);
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed. Please try again.');
+      // Extract specific error message from server response
+      const serverMessage =
+        err.response?.data?.errors?.[0]?.message ||
+        err.response?.data?.message ||
+        'Registration failed. Please try again.';
+      setError(serverMessage);
     } finally {
       setLoading(false);
     }
@@ -42,31 +77,48 @@ const Register = () => {
           <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-purple-600/15 rounded-full blur-3xl" />
         </div>
         <div className="relative z-10 text-center">
-          <div className="text-6xl mb-6">🚀</div>
-          <h2 className="text-3xl font-display font-bold text-white mb-4">Start your journey</h2>
-          <p className="text-dark-300 max-w-xs mx-auto">
-            Create your free PortfolioPro account and start managing your investments like a professional.
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-navy-500 to-indigo-600 flex items-center justify-center mx-auto mb-6 shadow-lg shadow-navy-600/30">
+            <span className="text-white font-extrabold text-2xl font-display">BA</span>
+          </div>
+          <h2 className="text-3xl font-display font-bold text-white mb-4">Grow Your Business</h2>
+          <p className="text-dark-300 max-w-sm mx-auto leading-relaxed">
+            Join BizAnalytics and manage your business with confidence. Track real-time sales, inventory, and analytics in one place.
           </p>
         </div>
       </div>
 
-      {/* Form */}
+      {/* Form container */}
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-md">
+          {/* Mobile brand header */}
           <div className="lg:hidden flex items-center gap-3 mb-8">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-navy-500 to-purple-600 flex items-center justify-center">
-              <span className="text-white font-bold text-sm">P</span>
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-navy-500 to-indigo-600 flex items-center justify-center shadow-md">
+              <span className="text-white font-bold text-sm">BA</span>
             </div>
-            <span className="font-display font-bold text-white text-xl">PortfolioPro</span>
+            <span className="font-display font-bold text-white text-xl">BizAnalytics</span>
           </div>
 
           <div className="card">
             <h2 className="text-2xl font-display font-bold text-white mb-2">Create account</h2>
-            <p className="text-dark-400 text-sm mb-6">Join PortfolioPro and take control of your investments</p>
+            <p className="text-dark-400 text-sm mb-6">
+              Join BizAnalytics and manage your business with confidence.
+            </p>
 
-            {error && <div className="alert-error mb-4">{error}</div>}
+            {error && (
+              <div className="mb-4 p-3.5 rounded-xl bg-danger-500/10 border border-danger-500/20 text-danger-400 text-xs flex items-center gap-2">
+                <span>⚠️</span>
+                <span>{error}</span>
+              </div>
+            )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            {success && (
+              <div className="mb-4 p-3.5 rounded-xl bg-success-500/10 border border-success-500/20 text-success-400 text-xs flex items-center gap-2">
+                <span>✅</span>
+                <span>{success}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-4" noValidate>
               <div>
                 <label className="label" htmlFor="name">Full Name</label>
                 <input
@@ -76,10 +128,11 @@ const Register = () => {
                   value={form.name}
                   onChange={handleChange}
                   className="input-field"
-                  placeholder="John Doe"
+                  placeholder="e.g. John Doe"
                   autoComplete="name"
                 />
               </div>
+
               <div>
                 <label className="label" htmlFor="reg-email">Email Address</label>
                 <input
@@ -89,10 +142,11 @@ const Register = () => {
                   value={form.email}
                   onChange={handleChange}
                   className="input-field"
-                  placeholder="you@example.com"
+                  placeholder="name@example.com"
                   autoComplete="email"
                 />
               </div>
+
               <div>
                 <label className="label" htmlFor="reg-password">Password</label>
                 <input
@@ -101,11 +155,16 @@ const Register = () => {
                   type="password"
                   value={form.password}
                   onChange={handleChange}
+                  maxLength={8}
                   className="input-field"
-                  placeholder="Min. 6 characters"
+                  placeholder="••••••••"
                   autoComplete="new-password"
                 />
+                <p className="text-[11px] text-dark-400 mt-1">
+                  Password must be exactly 8 characters.
+                </p>
               </div>
+
               <div>
                 <label className="label" htmlFor="confirmPassword">Confirm Password</label>
                 <input
@@ -114,16 +173,20 @@ const Register = () => {
                   type="password"
                   value={form.confirmPassword}
                   onChange={handleChange}
+                  maxLength={8}
                   className="input-field"
                   placeholder="••••••••"
                   autoComplete="new-password"
                 />
+                <p className="text-[11px] text-dark-400 mt-1">
+                  Password must be exactly 8 characters.
+                </p>
               </div>
 
               <button
                 type="submit"
                 disabled={loading}
-                className="btn-primary w-full flex items-center justify-center gap-2 mt-2"
+                className="btn-primary w-full flex items-center justify-center gap-2 mt-2 py-2.5"
               >
                 {loading ? (
                   <>

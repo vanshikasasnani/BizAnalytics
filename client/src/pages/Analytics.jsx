@@ -1,18 +1,19 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
+  AreaChart, Area, BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from 'recharts';
 import api from '../services/api';
 
-const COLORS = ['#6366f1', '#06b6d4', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6'];
+const COLORS = ['#6366f1', '#06b6d4', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#64748b'];
 const formatCurrency = (val) => `₹${Number(val || 0).toLocaleString('en-IN')}`;
 
 const Analytics = () => {
   const [filter, setFilter] = useState('30days');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [data, setData] = useState(null);
+  const [detailedData, setDetailedData] = useState(null);
+  const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -20,14 +21,20 @@ const Analytics = () => {
     try {
       setLoading(true);
       setError('');
+
       const params = new URLSearchParams({ filter });
       if (filter === 'custom' && startDate && endDate) {
         params.set('startDate', startDate);
         params.set('endDate', endDate);
       }
 
-      const res = await api.get(`/analytics/detailed?${params.toString()}`);
-      setData(res.data);
+      const [detailedRes, dashRes] = await Promise.all([
+        api.get(`/analytics/detailed?${params.toString()}`),
+        api.get('/analytics/dashboard'),
+      ]);
+
+      setDetailedData(detailedRes.data);
+      setDashboardData(dashRes.data);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load analytics data');
     } finally {
@@ -39,16 +46,22 @@ const Analytics = () => {
     fetchAnalytics();
   }, [fetchAnalytics]);
 
-  const summary = data?.summary || { revenue: 0, profit: 0, orders: 0, itemsSold: 0 };
-  const profitMargin = summary.revenue > 0 ? ((summary.profit / summary.revenue) * 100).toFixed(2) : 0;
+  const summary = detailedData?.summary || { revenue: 0, profit: 0, orders: 0, itemsSold: 0 };
+  const profitMargin = summary.revenue > 0 ? ((summary.profit / summary.revenue) * 100).toFixed(1) : 0;
+  const dashCharts = dashboardData?.charts || { monthlyRevenue: [], salesByCategory: [], topProducts: [] };
+
+  // Calculate overall growth from latest monthly data
+  const latestGrowth = dashCharts.monthlyRevenue?.length > 0
+    ? dashCharts.monthlyRevenue[dashCharts.monthlyRevenue.length - 1].growth
+    : 0;
 
   return (
     <div className="space-y-6 animate-fade-in pb-12">
       {/* Header and Filter Controls */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white font-display">Deep-Dive Business Analytics</h1>
-          <p className="text-xs text-dark-400 mt-1">Multi-dimensional analysis of revenue velocity, margin health, and product demand</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white font-display">Business Analytics</h1>
+          <p className="text-sm text-dark-300 mt-1">Detailed performance, profit margins, and sales trends</p>
         </div>
 
         {/* Date Filter Pills */}
@@ -58,7 +71,7 @@ const Analytics = () => {
             { id: '30days', label: 'Last 30 Days' },
             { id: '6months', label: 'Last 6 Months' },
             { id: 'thisYear', label: 'This Year' },
-            { id: 'custom', label: 'Custom Range' },
+            { id: 'custom', label: 'Custom' },
           ].map((btn) => (
             <button
               key={btn.id}
@@ -78,7 +91,7 @@ const Analytics = () => {
       {/* Custom Date Pickers */}
       {filter === 'custom' && (
         <div className="card p-3 flex flex-wrap items-center gap-3">
-          <span className="text-xs text-dark-400">Custom Date Span:</span>
+          <span className="text-xs text-dark-400">Date Range:</span>
           <input
             type="date"
             value={startDate}
@@ -104,150 +117,235 @@ const Analytics = () => {
         </div>
       )}
 
-      {/* Period KPI Summary */}
+      {/* 4 Summary Cards: Revenue, Profit, Net Profit Margin, Growth */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="card bg-gradient-to-br from-navy-600/20 to-navy-500/5 border border-navy-500/20">
-          <p className="text-dark-400 text-xs uppercase font-medium">Period Revenue</p>
-          <p className="text-2xl sm:text-3xl font-bold text-white mt-1 font-display">{formatCurrency(summary.revenue)}</p>
-          <p className="text-dark-400 text-[11px] mt-1">Total billing across selected dates</p>
-        </div>
-        <div className="card bg-gradient-to-br from-emerald-600/20 to-emerald-500/5 border border-emerald-500/20">
-          <p className="text-dark-400 text-xs uppercase font-medium">Period Net Profit</p>
-          <p className="text-2xl sm:text-3xl font-bold text-emerald-400 mt-1 font-display">{formatCurrency(summary.profit)}</p>
-          <p className="text-dark-400 text-[11px] mt-1">{profitMargin}% average net margin</p>
-        </div>
-        <div className="card bg-gradient-to-br from-purple-600/20 to-purple-500/5 border border-purple-500/20">
-          <p className="text-dark-400 text-xs uppercase font-medium">Completed Orders</p>
-          <p className="text-2xl sm:text-3xl font-bold text-white mt-1 font-display">{summary.orders}</p>
-          <p className="text-dark-400 text-[11px] mt-1">
-            Avg. {summary.orders > 0 ? formatCurrency(Math.round(summary.revenue / summary.orders)) : '₹0'} / order
+          <p className="text-dark-400 text-xs uppercase font-medium">Total Revenue</p>
+          <p className="text-2xl sm:text-3xl font-bold text-white mt-1 font-display">
+            {formatCurrency(summary.revenue)}
           </p>
+          <p className="text-dark-400 text-[11px] mt-1">Across selected timeframe</p>
         </div>
-        <div className="card bg-gradient-to-br from-amber-600/20 to-amber-500/5 border border-amber-500/20">
-          <p className="text-dark-400 text-xs uppercase font-medium">Units Sold</p>
-          <p className="text-2xl sm:text-3xl font-bold text-white mt-1 font-display">{summary.itemsSold}</p>
-          <p className="text-dark-400 text-[11px] mt-1">Total physical/digital items dispatched</p>
+
+        <div className="card bg-gradient-to-br from-emerald-600/20 to-emerald-500/5 border border-emerald-500/20">
+          <p className="text-dark-400 text-xs uppercase font-medium">Total Profit</p>
+          <p className="text-2xl sm:text-3xl font-bold text-emerald-400 mt-1 font-display">
+            {formatCurrency(summary.profit)}
+          </p>
+          <p className="text-dark-400 text-[11px] mt-1">Net profit after item costs</p>
+        </div>
+
+        <div className="card bg-gradient-to-br from-purple-600/20 to-purple-500/5 border border-purple-500/20">
+          <p className="text-dark-400 text-xs uppercase font-medium">Net Profit Margin</p>
+          <p className="text-2xl sm:text-3xl font-bold text-purple-400 mt-1 font-display">
+            {profitMargin}%
+          </p>
+          <p className="text-dark-400 text-[11px] mt-1">Net earnings ratio</p>
+        </div>
+
+        <div className="card bg-gradient-to-br from-cyan-600/20 to-cyan-500/5 border border-cyan-500/20">
+          <p className="text-dark-400 text-xs uppercase font-medium">Sales Growth</p>
+          <p className={`text-2xl sm:text-3xl font-bold mt-1 font-display ${latestGrowth >= 0 ? 'text-cyan-400' : 'text-danger-400'}`}>
+            {latestGrowth >= 0 ? `+${latestGrowth}%` : `${latestGrowth}%`}
+          </p>
+          <p className="text-dark-400 text-[11px] mt-1">{summary.orders} orders in period</p>
         </div>
       </div>
 
       {loading ? (
-        <div className="card py-20 text-center text-dark-400 text-sm">Processing time-series metrics...</div>
-      ) : !data ? (
+        <div className="card py-20 text-center text-dark-400 text-sm">
+          <div className="w-8 h-8 border-3 border-navy-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+          Loading analytics...
+        </div>
+      ) : !detailedData ? (
         <div className="card py-16 text-center text-dark-400 text-sm">No analytics available for this window</div>
       ) : (
         <>
-          {/* Timeline Chart */}
-          <div className="card">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="text-base font-bold text-white">Daily Revenue & Profit Timeline</h3>
-                <p className="text-xs text-dark-400">Day-by-day financial performance over selected timeframe</p>
+          {/* Charts Row 1: Profit Analysis (Revenue vs Profit) + Sales by Category */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Profit Analysis Chart */}
+            <div className="card lg:col-span-2">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-base font-bold text-white">Profit Analysis</h3>
+                  <p className="text-xs text-dark-400">Monthly Revenue vs Net Profit</p>
+                </div>
+                <span className="text-xs text-dark-400 bg-dark-700/60 px-2.5 py-1 rounded-lg">Last 12 Months</span>
               </div>
-            </div>
-            <div className="h-72 w-full">
-              {data.timeline.length === 0 ? (
-                <div className="h-full flex items-center justify-center text-dark-500 text-sm">No transaction points recorded in this date range</div>
-              ) : (
+              <div className="h-72 w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={data.timeline}>
+                  <AreaChart data={dashCharts.monthlyRevenue}>
                     <defs>
-                      <linearGradient id="tRev" x1="0" y1="0" x2="0" y2="1">
+                      <linearGradient id="anColorRev" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4} />
                         <stop offset="95%" stopColor="#6366f1" stopOpacity={0.0} />
                       </linearGradient>
-                      <linearGradient id="tProfit" x1="0" y1="0" x2="0" y2="1">
+                      <linearGradient id="anColorProfit" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
                         <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.4} />
-                    <XAxis dataKey="date" stroke="#94a3b8" fontSize={11} tickLine={false} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
+                    <XAxis dataKey="month" stroke="#94a3b8" fontSize={11} tickLine={false} />
                     <YAxis stroke="#94a3b8" fontSize={11} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} />
                     <Tooltip
                       contentStyle={{ backgroundColor: '#1e293b', borderColor: '#475569', borderRadius: '0.75rem', color: '#f8fafc' }}
                       formatter={(val) => [formatCurrency(val)]}
                     />
-                    <Legend wrapperStyle={{ fontSize: '12px' }} />
-                    <Area type="monotone" dataKey="revenue" name="Revenue" stroke="#6366f1" strokeWidth={2.5} fill="url(#tRev)" />
-                    <Area type="monotone" dataKey="profit" name="Profit" stroke="#10b981" strokeWidth={2.5} fill="url(#tProfit)" />
+                    <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
+                    <Area type="monotone" dataKey="revenue" name="Total Revenue" stroke="#6366f1" strokeWidth={2.5} fillOpacity={1} fill="url(#anColorRev)" />
+                    <Area type="monotone" dataKey="profit" name="Net Profit" stroke="#10b981" strokeWidth={2.5} fillOpacity={1} fill="url(#anColorProfit)" />
                   </AreaChart>
                 </ResponsiveContainer>
-              )}
+              </div>
+            </div>
+
+            {/* Sales by Category Donut */}
+            <div className="card">
+              <div className="mb-4">
+                <h3 className="text-base font-bold text-white">Sales by Category</h3>
+                <p className="text-xs text-dark-400">Revenue split across product categories</p>
+              </div>
+              <div className="h-72 w-full flex items-center justify-center">
+                {dashCharts.salesByCategory.length === 0 ? (
+                  <p className="text-dark-500 text-sm">No category data recorded</p>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={dashCharts.salesByCategory}
+                        cx="50%"
+                        cy="45%"
+                        innerRadius={55}
+                        outerRadius={85}
+                        paddingAngle={3}
+                        dataKey="revenue"
+                      >
+                        {dashCharts.salesByCategory.map((entry, index) => (
+                          <Cell key={`an-cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{ backgroundColor: '#1e293b', borderColor: '#475569', borderRadius: '0.75rem', color: '#f8fafc' }}
+                        formatter={(val) => [formatCurrency(val), 'Revenue']}
+                      />
+                      <Legend wrapperStyle={{ fontSize: '11px', bottom: '0px' }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Product Sales & Category Split */}
+          {/* Charts Row 2: Sales Growth Trend + Monthly Orders Volume */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Product Performance Table */}
+            {/* Sales Growth Trend */}
             <div className="card">
-              <h3 className="text-base font-bold text-white mb-1">Product-Wise Sales Analysis</h3>
-              <p className="text-xs text-dark-400 mb-4">Volume and profit generated per SKU</p>
+              <div className="mb-4">
+                <h3 className="text-base font-bold text-white">Sales Growth Trend</h3>
+                <p className="text-xs text-dark-400">Month-over-month sales velocity (%)</p>
+              </div>
+              <div className="h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={dashCharts.monthlyRevenue}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
+                    <XAxis dataKey="month" stroke="#94a3b8" fontSize={11} tickLine={false} />
+                    <YAxis stroke="#94a3b8" fontSize={11} tickFormatter={(v) => `${v}%`} />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#1e293b', borderColor: '#475569', borderRadius: '0.75rem' }}
+                      formatter={(val) => [`${val}%`, 'Growth Rate']}
+                    />
+                    <Line type="monotone" dataKey="growth" name="Growth" stroke="#06b6d4" strokeWidth={2.5} dot={{ r: 4 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Monthly Orders Volume */}
+            <div className="card">
+              <div className="mb-4">
+                <h3 className="text-base font-bold text-white">Monthly Orders Volume</h3>
+                <p className="text-xs text-dark-400">Number of completed orders per month</p>
+              </div>
+              <div className="h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={dashCharts.monthlyRevenue}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
+                    <XAxis dataKey="month" stroke="#94a3b8" fontSize={11} tickLine={false} />
+                    <YAxis stroke="#94a3b8" fontSize={11} />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#1e293b', borderColor: '#475569', borderRadius: '0.75rem' }}
+                    />
+                    <Bar dataKey="orders" name="Orders Count" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+
+          {/* Tables Row: Best-Selling Products Performance + Payment Methods */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Best-Selling Products Table */}
+            <div className="card lg:col-span-2">
+              <div className="mb-4">
+                <h3 className="text-base font-bold text-white">Best-Selling Products Performance</h3>
+                <p className="text-xs text-dark-400">Revenue, units sold, and profit per product</p>
+              </div>
 
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-dark-750 text-dark-400 uppercase text-[10px]">
+                  <thead className="bg-dark-750 text-dark-300 uppercase text-[10px] tracking-wider border-b border-dark-700">
                     <tr>
-                      <th className="p-2.5">Product Name</th>
-                      <th className="p-2.5 text-center">Units</th>
-                      <th className="p-2.5 text-right">Revenue</th>
-                      <th className="p-2.5 text-right">Profit</th>
+                      <th className="py-2.5 px-3">Product</th>
+                      <th className="py-2.5 px-3 text-center">Units Sold</th>
+                      <th className="py-2.5 px-3 text-right">Revenue</th>
+                      <th className="py-2.5 px-3 text-right">Profit</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-dark-700/50">
-                    {data.productSales.map((p, idx) => (
-                      <tr key={idx} className="hover:bg-dark-750">
-                        <td className="p-2.5 font-medium text-white max-w-[180px] truncate">{p.name}</td>
-                        <td className="p-2.5 text-center text-dark-300 font-semibold">{p.quantity}</td>
-                        <td className="p-2.5 text-right font-bold text-white">{formatCurrency(p.revenue)}</td>
-                        <td className="p-2.5 text-right font-semibold text-emerald-400">{formatCurrency(p.profit)}</td>
+                  <tbody className="divide-y divide-dark-700/40">
+                    {detailedData.productSales.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="py-6 text-center text-dark-500">
+                          No product sales recorded in this timeframe
+                        </td>
                       </tr>
-                    ))}
+                    ) : (
+                      detailedData.productSales.map((p, idx) => (
+                        <tr key={idx} className="hover:bg-dark-750 transition-colors">
+                          <td className="py-2.5 px-3 font-medium text-white max-w-[200px] truncate">
+                            {p.name}
+                          </td>
+                          <td className="py-2.5 px-3 text-center text-dark-300 font-semibold">{p.quantity}</td>
+                          <td className="py-2.5 px-3 text-right font-bold text-white">{formatCurrency(p.revenue)}</td>
+                          <td className="py-2.5 px-3 text-right font-semibold text-emerald-400">{formatCurrency(p.profit)}</td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
             </div>
 
-            {/* Category Performance & Payment Methods */}
-            <div className="space-y-6">
-              {/* Category Breakdown */}
-              <div className="card">
-                <h3 className="text-base font-bold text-white mb-1">Category-Wise Distribution</h3>
-                <p className="text-xs text-dark-400 mb-4">Revenue breakdown across departments</p>
-
-                <div className="space-y-3">
-                  {data.categorySales.map((c, i) => {
-                    const pct = summary.revenue > 0 ? ((c.revenue / summary.revenue) * 100).toFixed(1) : 0;
-                    return (
-                      <div key={i} className="space-y-1">
-                        <div className="flex justify-between text-xs">
-                          <span className="font-medium text-white">{c.name}</span>
-                          <span className="text-dark-400">{formatCurrency(c.revenue)} ({pct}%)</span>
-                        </div>
-                        <div className="w-full h-2 rounded-full bg-dark-700 overflow-hidden">
-                          <div
-                            className="h-full bg-navy-500 rounded-full"
-                            style={{ width: `${pct}%`, backgroundColor: COLORS[i % COLORS.length] }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+            {/* Payment Method Split */}
+            <div className="card">
+              <div className="mb-4">
+                <h3 className="text-base font-bold text-white">Payment Methods</h3>
+                <p className="text-xs text-dark-400">Customer payment channels</p>
               </div>
-
-              {/* Payment Methods */}
-              <div className="card">
-                <h3 className="text-base font-bold text-white mb-1">Payment Method Split</h3>
-                <p className="text-xs text-dark-400 mb-3">Customer settlement channel breakdown</p>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {data.paymentMethods.map((pm, i) => (
-                    <div key={i} className="p-3 rounded-xl bg-dark-750 border border-dark-700 text-center">
-                      <p className="text-xs font-semibold text-white truncate">{pm.method || 'Other'}</p>
-                      <p className="text-sm font-bold text-emerald-400 mt-1">{formatCurrency(pm.amount)}</p>
-                      <span className="text-[10px] text-dark-500">{pm.count} orders</span>
+              <div className="space-y-3">
+                {detailedData.paymentMethods.length === 0 ? (
+                  <p className="text-dark-500 text-xs py-4 text-center">No payment data recorded</p>
+                ) : (
+                  detailedData.paymentMethods.map((pm, i) => (
+                    <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-dark-750 border border-dark-700">
+                      <div>
+                        <p className="text-xs font-semibold text-white">{pm.method || 'Other'}</p>
+                        <span className="text-[10px] text-dark-400">{pm.count} order(s)</span>
+                      </div>
+                      <p className="text-sm font-bold text-emerald-400">{formatCurrency(pm.amount)}</p>
                     </div>
-                  ))}
-                </div>
+                  ))
+                )}
               </div>
             </div>
           </div>
@@ -258,4 +356,3 @@ const Analytics = () => {
 };
 
 export default Analytics;
-

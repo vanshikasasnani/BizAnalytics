@@ -42,7 +42,7 @@ const ProductModal = ({ product, onClose, onSave }) => {
     }
 
     if (Number(form.price) < 0 || Number(form.costPrice) < 0 || Number(form.stock) < 0) {
-      return setError('Price, cost price, and stock must be positive numbers');
+      return setError('Price, cost price, and stock must be 0 or higher');
     }
 
     setLoading(true);
@@ -58,64 +58,62 @@ const ProductModal = ({ product, onClose, onSave }) => {
 
   return (
     <div className="fixed inset-0 bg-dark-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-dark-800 border border-dark-700 rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl animate-scale-in">
+      <div className="bg-dark-800 border border-dark-700 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl animate-scale-in">
         <div className="flex items-center justify-between px-6 py-4 border-b border-dark-700 bg-dark-850">
           <h2 className="text-white font-bold text-base font-display">
-            {product ? 'Edit Product Details' : 'Add New Business Product'}
+            {product ? 'Edit Product' : 'Add New Product'}
           </h2>
-          <button onClick={onClose} className="text-dark-400 hover:text-white p-1 rounded-lg">
-            ✕
-          </button>
+          <button onClick={onClose} className="text-dark-400 hover:text-white p-1 rounded-lg">✕</button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
           {error && <div className="p-3 rounded-xl bg-danger-500/10 border border-danger-500/20 text-danger-400 text-xs">{error}</div>}
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2">
+            <div className="col-span-2 sm:col-span-1">
               <label className="label">Product Name *</label>
               <input
                 name="name"
                 value={form.name}
                 onChange={handleChange}
-                className="input-field"
-                placeholder="e.g. Ergonomic Office Desk"
+                className="input-field text-xs"
+                placeholder="e.g. Wireless Mouse"
                 required
               />
             </div>
 
-            <div>
-              <label className="label">SKU / Item Code *</label>
+            <div className="col-span-2 sm:col-span-1">
+              <label className="label">Item Code / SKU *</label>
               <input
                 name="sku"
                 value={form.sku}
                 onChange={handleChange}
-                className="input-field uppercase"
-                placeholder="e.g. PROD-101"
+                className="input-field text-xs"
+                placeholder="e.g. MSE-001"
                 required
               />
             </div>
 
-            <div>
+            <div className="col-span-2 sm:col-span-1">
               <label className="label">Category *</label>
-              <select name="category" value={form.category} onChange={handleChange} className="select-field">
+              <select name="category" value={form.category} onChange={handleChange} className="select-field text-xs">
                 {CATEGORIES.filter((c) => c !== 'All').map((c) => (
                   <option key={c} value={c}>{c}</option>
                 ))}
               </select>
             </div>
 
-            <div>
+            <div className="col-span-2 sm:col-span-1">
               <label className="label">Selling Price (₹) *</label>
               <input
                 name="price"
                 type="number"
-                value={form.price}
-                onChange={handleChange}
-                className="input-field"
-                placeholder="0.00"
                 min="0"
                 step="any"
+                value={form.price}
+                onChange={handleChange}
+                className="input-field text-xs"
+                placeholder="0.00"
                 required
               />
             </div>
@@ -125,46 +123,46 @@ const ProductModal = ({ product, onClose, onSave }) => {
               <input
                 name="costPrice"
                 type="number"
-                value={form.costPrice}
-                onChange={handleChange}
-                className="input-field"
-                placeholder="0.00"
                 min="0"
                 step="any"
+                value={form.costPrice}
+                onChange={handleChange}
+                className="input-field text-xs"
+                placeholder="0.00"
                 required
               />
             </div>
 
             <div>
-              <label className="label">Available Stock *</label>
+              <label className="label">Available Stock (Units) *</label>
               <input
                 name="stock"
                 type="number"
+                min="0"
                 value={form.stock}
                 onChange={handleChange}
-                className="input-field"
+                className="input-field text-xs"
                 placeholder="0"
-                min="0"
                 required
               />
             </div>
 
             <div>
-              <label className="label">Low Stock Alert Threshold</label>
+              <label className="label">Low Stock Alert Level</label>
               <input
                 name="lowStockThreshold"
                 type="number"
+                min="0"
                 value={form.lowStockThreshold}
                 onChange={handleChange}
-                className="input-field"
+                className="input-field text-xs"
                 placeholder="5"
-                min="0"
               />
             </div>
 
-            <div className="col-span-2">
+            <div>
               <label className="label">Status</label>
-              <select name="status" value={form.status} onChange={handleChange} className="select-field">
+              <select name="status" value={form.status} onChange={handleChange} className="select-field text-xs">
                 <option value="Active">Active</option>
                 <option value="Draft">Draft</option>
                 <option value="Archived">Archived</option>
@@ -172,24 +170,24 @@ const ProductModal = ({ product, onClose, onSave }) => {
             </div>
 
             <div className="col-span-2">
-              <label className="label">Product Description</label>
+              <label className="label">Description / Notes</label>
               <textarea
                 name="description"
                 value={form.description}
                 onChange={handleChange}
-                className="input-field resize-none text-xs"
-                rows={3}
-                placeholder="Specifications, features, warranty..."
+                rows={2}
+                className="input-field text-xs resize-none"
+                placeholder="Optional product details..."
               />
             </div>
           </div>
 
-          <div className="flex gap-3 pt-3 border-t border-dark-700">
-            <button type="button" onClick={onClose} className="btn-secondary flex-1">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-dark-700">
+            <button type="button" onClick={onClose} className="btn-secondary text-xs">
               Cancel
             </button>
-            <button type="submit" disabled={loading} className="btn-primary flex-1">
-              {loading ? 'Saving...' : product ? 'Update Product' : 'Create Product'}
+            <button type="submit" disabled={loading} className="btn-primary text-xs">
+              {loading ? 'Saving...' : product ? 'Update Product' : 'Add Product'}
             </button>
           </div>
         </form>
@@ -263,20 +261,26 @@ const Products = () => {
     }
   };
 
+  // Check for any low stock products
+  const lowStockProducts = products.filter(
+    (p) => p.stock <= p.lowStockThreshold && p.stock > 0
+  );
+  const outOfStockProducts = products.filter((p) => p.stock === 0);
+
   return (
     <div className="space-y-6 animate-fade-in pb-12">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white font-display">Product Inventory Management</h1>
-          <p className="text-xs text-dark-400 mt-1">Manage catalog, track live stock quantities, sales velocity and margins</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white font-display">Product Inventory Management</h1>
+          <p className="text-sm text-dark-300 mt-1">Manage your catalog, selling prices, and live stock levels</p>
         </div>
         <button
           onClick={() => {
             setEditProduct(null);
             setShowModal(true);
           }}
-          className="btn-primary flex items-center gap-2 self-start sm:self-auto"
+          className="btn-primary flex items-center gap-2 self-start sm:self-auto text-xs"
         >
           <span>+</span>
           <span>Add New Product</span>
@@ -293,6 +297,28 @@ const Products = () => {
         </div>
       )}
 
+      {/* Clear Warning for Low-Stock Products */}
+      {(lowStockProducts.length > 0 || outOfStockProducts.length > 0) && (
+        <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs space-y-1">
+          <div className="flex items-center gap-2 font-semibold text-amber-400">
+            <span className="text-base">⚠️</span>
+            <span>Inventory Alert</span>
+          </div>
+          {outOfStockProducts.length > 0 && (
+            <p>
+              <strong>{outOfStockProducts.length} product(s) are completely out of stock:</strong>{' '}
+              {outOfStockProducts.map((p) => p.name).join(', ')}.
+            </p>
+          )}
+          {lowStockProducts.length > 0 && (
+            <p>
+              <strong>{lowStockProducts.length} product(s) have low stock:</strong>{' '}
+              {lowStockProducts.map((p) => `${p.name} (${p.stock} left)`).join(', ')}.
+            </p>
+          )}
+        </div>
+      )}
+
       {/* Filter and Search Bar */}
       <div className="card p-4 flex flex-col md:flex-row gap-3">
         <div className="flex-1">
@@ -300,7 +326,7 @@ const Products = () => {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by product name, SKU, or specs..."
+            placeholder="Search by product name or code..."
             className="input-field text-sm"
           />
         </div>
@@ -330,7 +356,7 @@ const Products = () => {
         </div>
 
         {loading ? (
-          <div className="py-16 text-center text-dark-400 text-sm">Loading catalog...</div>
+          <div className="py-16 text-center text-dark-400 text-sm">Loading products...</div>
         ) : products.length === 0 ? (
           <div className="py-16 text-center text-dark-400 text-sm">No products found matching filters</div>
         ) : (
@@ -338,13 +364,12 @@ const Products = () => {
             <table className="w-full text-left text-xs">
               <thead className="bg-dark-750 text-dark-300 uppercase text-[10px] tracking-wider border-b border-dark-700">
                 <tr>
-                  <th className="py-3 px-4">Product Info</th>
+                  <th className="py-3 px-4">Product Name</th>
                   <th className="py-3 px-4">Category</th>
                   <th className="py-3 px-4">Selling Price</th>
-                  <th className="py-3 px-4">Unit Cost</th>
-                  <th className="py-3 px-4">Margin</th>
+                  <th className="py-3 px-4">Cost Price</th>
+                  <th className="py-3 px-4 text-center">Available Stock</th>
                   <th className="py-3 px-4">Stock Status</th>
-                  <th className="py-3 px-4">Units Sold</th>
                   <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
               </thead>
@@ -362,15 +387,13 @@ const Products = () => {
                       <td className="py-3.5 px-4 text-dark-300">{p.category}</td>
                       <td className="py-3.5 px-4 font-semibold text-white">{formatCurrency(p.price)}</td>
                       <td className="py-3.5 px-4 text-dark-400">{formatCurrency(p.costPrice)}</td>
-                      <td className="py-3.5 px-4">
-                        <span className="text-emerald-400 font-medium font-mono">
-                          {p.profitMargin || 0}%
-                        </span>
+                      <td className="py-3.5 px-4 text-center font-bold text-white">
+                        {p.stock}
                       </td>
                       <td className="py-3.5 px-4">
                         {isOutOfStock ? (
                           <span className="badge bg-danger-500/10 text-danger-400 border border-danger-500/20">
-                            Out of Stock (0)
+                            Out of Stock
                           </span>
                         ) : isLowStock ? (
                           <span className="badge bg-amber-500/10 text-amber-400 border border-amber-500/20">
@@ -378,11 +401,10 @@ const Products = () => {
                           </span>
                         ) : (
                           <span className="badge bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                            In Stock ({p.stock})
+                            In Stock
                           </span>
                         )}
                       </td>
-                      <td className="py-3.5 px-4 text-dark-300 font-semibold">{p.soldCount || 0}</td>
                       <td className="py-3.5 px-4 text-right space-x-2">
                         <button
                           onClick={() => {
@@ -423,4 +445,3 @@ const Products = () => {
 };
 
 export default Products;
-

@@ -12,6 +12,7 @@ const customerSchema = new mongoose.Schema(
       required: [true, 'Customer email is required'],
       trim: true,
       lowercase: true,
+      unique: true,
       match: [/^\S+@\S+\.\S+$/, 'Please enter a valid email'],
     },
     phone: {
