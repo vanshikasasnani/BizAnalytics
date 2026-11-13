@@ -216,4 +216,80 @@ describe('Business Performance & Sales Analytics API Test Suite', () => {
       expect(Array.isArray(res.body.notifications)).toBe(true);
     });
   });
+
+  describe('8. Role-Based Access Control & Admin Operations', () => {
+    let staffToken = '';
+    const staffEmail = `staff_${Date.now()}@example.com`;
+
+    it('POST /api/auth/register should create a staff/user role', async () => {
+      const res = await request(app)
+        .post('/api/auth/register')
+        .send({
+          name: 'Staff Member Test',
+          email: staffEmail,
+          password: 'pass1234',
+          role: 'user',
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.user.role).toBe('user');
+      staffToken = res.body.token;
+    });
+
+    it('GET /api/admin/stats should reject non-admin users with 403 Forbidden', async () => {
+      const res = await request(app)
+        .get('/api/admin/stats')
+        .set('Authorization', `Bearer ${staffToken}`);
+
+      expect(res.status).toBe(403);
+      expect(res.body.message).toMatch(/Not authorized as an admin/i);
+    });
+
+    it('GET /api/admin/stats should reject unauthenticated requests with 401 Unauthorized', async () => {
+      const res = await request(app).get('/api/admin/stats');
+      expect(res.status).toBe(401);
+    });
+
+    it('GET /api/admin/stats should allow Admin and return complete overview metrics & charts', async () => {
+      const res = await request(app)
+        .get('/api/admin/stats')
+        .set('Authorization', `Bearer ${authToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.metrics).toHaveProperty('totalRevenue');
+      expect(res.body.metrics).toHaveProperty('totalSales');
+      expect(res.body.metrics).toHaveProperty('totalCustomers');
+      expect(res.body.metrics).toHaveProperty('totalProducts');
+      expect(res.body.metrics).toHaveProperty('staffUsers');
+      expect(res.body.metrics).toHaveProperty('totalProfit');
+      expect(res.body).toHaveProperty('monthlyRevenue');
+      expect(res.body).toHaveProperty('bestSellingProducts');
+      expect(res.body).toHaveProperty('categoryDistribution');
+    });
+
+    it('POST /api/admin/users should allow Admin to add a new staff user', async () => {
+      const newStaffEmail = `admin_created_staff_${Date.now()}@example.com`;
+      const res = await request(app)
+        .post('/api/admin/users')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          name: 'Admin Created Staff',
+          email: newStaffEmail,
+          password: 'pass1234',
+          role: 'user',
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.user.email).toBe(newStaffEmail);
+    });
+
+    it('DELETE /api/products/:id should reject Staff with 403 Forbidden', async () => {
+      const res = await request(app)
+        .delete(`/api/products/${testProductId}`)
+        .set('Authorization', `Bearer ${staffToken}`);
+
+      expect(res.status).toBe(403);
+      expect(res.body.message).toMatch(/Not authorized as an admin/i);
+    });
+  });
 });

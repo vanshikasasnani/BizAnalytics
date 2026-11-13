@@ -46,7 +46,7 @@ const Navbar = () => {
     if (path.startsWith('/analytics')) return 'Analytics';
     if (path.startsWith('/reports')) return 'Reports';
     if (path.startsWith('/notifications')) return 'Notifications';
-    if (path.startsWith('/admin')) return 'User Management';
+    if (path.startsWith('/admin')) return 'Admin Dashboard';
     if (path.startsWith('/settings') || path.startsWith('/profile')) return 'Settings';
     return 'Business Overview';
   };
@@ -110,7 +110,7 @@ const Navbar = () => {
             </NavLink>
           ))}
 
-          {/* User Management (Admin only) - 7th item in the list */}
+          {/* Admin Dashboard & User Management (Admin only) */}
           {user?.role === 'admin' && (
             <NavLink
               to="/admin"
@@ -124,7 +124,7 @@ const Navbar = () => {
               onClick={() => setSidebarOpen(false)}
             >
               <span className="text-lg flex-shrink-0">🛡️</span>
-              <span className="truncate">User Management</span>
+              <span className="truncate">Admin Dashboard</span>
             </NavLink>
           )}
         </nav>

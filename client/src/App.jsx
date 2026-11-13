@@ -121,6 +121,14 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/admin/dashboard"
+        element={
+          <ProtectedRoute adminOnly={true}>
+            <AppLayout><AdminDashboard /></AppLayout>
+          </ProtectedRoute>
+        }
+      />
 
       {/* Redirect old routes */}
       <Route path="/portfolio" element={<Navigate to="/products" replace />} />

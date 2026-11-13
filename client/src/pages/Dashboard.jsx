@@ -5,6 +5,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
 import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 const formatCurrency = (val) => `₹${Number(val || 0).toLocaleString('en-IN')}`;
 
@@ -31,6 +32,7 @@ const StatCard = ({ title, value, subtitle, icon, color = 'navy' }) => {
 };
 
 const Dashboard = () => {
+  const { user } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -81,10 +83,27 @@ const Dashboard = () => {
       {/* 1. Header with simple title & subtitle */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white font-display">Business Overview</h1>
-          <p className="text-sm text-dark-300 mt-1">Welcome back! Here's how your business is doing.</p>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl sm:text-3xl font-bold text-white font-display">
+              {user?.role === 'admin' ? 'Business Overview' : 'Staff Dashboard'}
+            </h1>
+            <span className="badge bg-navy-500/10 text-navy-400 border border-navy-500/20 text-xs px-2.5 py-0.5 font-semibold">
+              {user?.role === 'admin' ? 'Business View' : 'Staff View'}
+            </span>
+          </div>
+          <p className="text-sm text-dark-300 mt-1">
+            {user?.role === 'admin'
+              ? "Welcome back! Here's how your business is doing."
+              : `Welcome, ${user?.name || 'Staff Member'}! Manage orders, catalog products, and customer relations.`}
+          </p>
         </div>
         <div className="flex items-center gap-2">
+          {user?.role === 'admin' && (
+            <Link to="/admin" className="btn-secondary text-xs flex items-center gap-1.5 border-purple-500/30 text-purple-300 hover:text-white">
+              <span>🛡️</span>
+              <span>Admin Dashboard</span>
+            </Link>
+          )}
           <Link to="/sales" className="btn-primary text-xs flex items-center gap-1.5">
             <span>+</span>
             <span>New Sale</span>

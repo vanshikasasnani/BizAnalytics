@@ -154,3 +154,4 @@ docker compose up --build
    * Pre-configured via `render.yaml`. Connect your GitHub repository to Render as a Web Service with root directory `server`, build command `npm install`, and start command `node index.js`. Set environment variables: `PORT=5000`, `MONGO_URI=<Atlas_Connection_String>`, `JWT_SECRET=<secret>`.
 2. **Frontend (Vercel):**
    * Pre-configured via `client/vercel.json` (handles SPA client-side routing rewrites). Set root directory to `client`, framework to Vite, and `VITE_API_BASE_URL=https://your-render-api.onrender.com/api`.
+
