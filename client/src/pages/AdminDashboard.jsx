@@ -67,7 +67,7 @@ const StaffUserModal = ({ user, onClose, onSave }) => {
               type="text"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="input-field text-xs"
+              className="input-field text-xs w-full"
               placeholder="e.g. Ramesh Sharma"
               required
             />
@@ -79,7 +79,7 @@ const StaffUserModal = ({ user, onClose, onSave }) => {
               type="email"
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
-              className="input-field text-xs"
+              className="input-field text-xs w-full"
               placeholder="e.g. staff@bizanalytics.com"
               required
             />
@@ -101,7 +101,7 @@ const StaffUserModal = ({ user, onClose, onSave }) => {
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="label">Account Role</label>
               <select
@@ -305,6 +305,13 @@ const AdminDashboard = () => {
             <span>+</span>
             <span>Add Staff User</span>
           </button>
+          <Link
+            to="/messages"
+            className="btn-secondary text-xs flex items-center gap-1.5 border-blue-500/30 text-blue-300 hover:text-white"
+          >
+            <span>💬</span>
+            <span>Messages</span>
+          </Link>
           <Link to="/reports" className="btn-secondary text-xs">
             Export All Data
           </Link>
@@ -322,7 +329,7 @@ const AdminDashboard = () => {
       )}
 
       {/* 1. Overview Cards (6 Cards) */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {/* Total Revenue */}
         <div className="card p-4 border border-emerald-500/20 bg-gradient-to-br from-emerald-600/15 to-emerald-500/5">
           <div className="flex items-center justify-between mb-2">
@@ -739,6 +746,17 @@ const AdminDashboard = () => {
                           </td>
 
                           <td className="p-3.5 text-right space-x-2">
+                            {/* Message Staff User */}
+                            {!isSelf && (
+                              <Link
+                                to={`/messages?user=${u._id}`}
+                                className="px-2.5 py-1 text-xs bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded-lg transition-colors font-medium inline-flex items-center gap-1"
+                              >
+                                <span>💬</span>
+                                <span>Chat</span>
+                              </Link>
+                            )}
+
                             {/* Edit Button */}
                             <button
                               onClick={() => {

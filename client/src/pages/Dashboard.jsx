@@ -104,6 +104,13 @@ const Dashboard = () => {
               <span>Admin Dashboard</span>
             </Link>
           )}
+          <Link
+            to="/messages"
+            className="btn-secondary text-xs flex items-center gap-1.5 border-blue-500/30 text-blue-300 hover:text-white"
+          >
+            <span>💬</span>
+            <span>Messages</span>
+          </Link>
           <Link to="/sales" className="btn-primary text-xs flex items-center gap-1.5">
             <span>+</span>
             <span>New Sale</span>
@@ -162,7 +169,7 @@ const Dashboard = () => {
       </div>
 
       {/* 3. Two Visualizations: Monthly Sales Overview + Best-Selling Products */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
         {/* Monthly Sales Overview */}
         <div className="card">
           <div className="flex items-center justify-between mb-4">
@@ -174,7 +181,7 @@ const Dashboard = () => {
               Detailed Analytics →
             </Link>
           </div>
-          <div className="h-64 w-full">
+          <div className="h-64 md:h-72 lg:h-80 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={charts.monthlyRevenue}>
                 <defs>
@@ -215,7 +222,7 @@ const Dashboard = () => {
               All Products →
             </Link>
           </div>
-          <div className="h-64 w-full">
+          <div className="h-64 md:h-72 lg:h-80 w-full">
             {charts.topProducts.length === 0 ? (
               <div className="h-full flex items-center justify-center text-dark-500 text-sm">
                 No product sales recorded yet

@@ -5,19 +5,16 @@ const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
-    const stored =
-      sessionStorage.getItem('portfoliopro_user') ||
-      localStorage.getItem('portfoliopro_user');
+    // Strictly isolate sessions by using sessionStorage
+    const stored = sessionStorage.getItem('bizanalytics_user');
     return stored ? JSON.parse(stored) : null;
   });
   const [loading, setLoading] = useState(true);
 
-  // Verify token on mount
+  // Verify token on mount from sessionStorage
   useEffect(() => {
     const verifyToken = async () => {
-      const token =
-        sessionStorage.getItem('portfoliopro_token') ||
-        localStorage.getItem('portfoliopro_token');
+      const token = sessionStorage.getItem('bizanalytics_token');
       if (!token) {
         setLoading(false);
         return;
@@ -25,12 +22,10 @@ export const AuthProvider = ({ children }) => {
       try {
         const { data } = await api.get('/auth/me');
         setUser(data.user);
-        sessionStorage.setItem('portfoliopro_user', JSON.stringify(data.user));
+        sessionStorage.setItem('bizanalytics_user', JSON.stringify(data.user));
       } catch {
-        sessionStorage.removeItem('portfoliopro_token');
-        sessionStorage.removeItem('portfoliopro_user');
-        localStorage.removeItem('portfoliopro_token');
-        localStorage.removeItem('portfoliopro_user');
+        sessionStorage.removeItem('bizanalytics_token');
+        sessionStorage.removeItem('bizanalytics_user');
         setUser(null);
       } finally {
         setLoading(false);
@@ -41,42 +36,51 @@ export const AuthProvider = ({ children }) => {
 
   const login = useCallback(async (email, password) => {
     const { data } = await api.post('/auth/login', { email, password });
-    // Use sessionStorage so tabs can be independently logged in (e.g. Admin in Tab 1, User in Tab 2)
-    sessionStorage.setItem('portfoliopro_token', data.token);
-    sessionStorage.setItem('portfoliopro_user', JSON.stringify(data.user));
-    // Also update localStorage as a backup
-    localStorage.setItem('portfoliopro_token', data.token);
-    localStorage.setItem('portfoliopro_user', JSON.stringify(data.user));
+    sessionStorage.setItem('bizanalytics_token', data.token);
+    sessionStorage.setItem('bizanalytics_user', JSON.stringify(data.user));
+    setUser(data.user);
+    return data;
+  }, []);
+
+  // Separate admin login
+  const adminLogin = useCallback(async (email, password) => {
+    const { data } = await api.post('/auth/admin/login', { email, password });
+    sessionStorage.setItem('bizanalytics_token', data.token);
+    sessionStorage.setItem('bizanalytics_user', JSON.stringify(data.user));
+    setUser(data.user);
+    return data;
+  }, []);
+
+  // Separate user (staff) login
+  const userLogin = useCallback(async (email, password) => {
+    const { data } = await api.post('/auth/user/login', { email, password });
+    sessionStorage.setItem('bizanalytics_token', data.token);
+    sessionStorage.setItem('bizanalytics_user', JSON.stringify(data.user));
     setUser(data.user);
     return data;
   }, []);
 
   const register = useCallback(async (name, email, password) => {
     const { data } = await api.post('/auth/register', { name, email, password });
-    sessionStorage.setItem('portfoliopro_token', data.token);
-    sessionStorage.setItem('portfoliopro_user', JSON.stringify(data.user));
-    localStorage.setItem('portfoliopro_token', data.token);
-    localStorage.setItem('portfoliopro_user', JSON.stringify(data.user));
+    sessionStorage.setItem('bizanalytics_token', data.token);
+    sessionStorage.setItem('bizanalytics_user', JSON.stringify(data.user));
     setUser(data.user);
     return data;
   }, []);
 
   const logout = useCallback(() => {
-    sessionStorage.removeItem('portfoliopro_token');
-    sessionStorage.removeItem('portfoliopro_user');
-    localStorage.removeItem('portfoliopro_token');
-    localStorage.removeItem('portfoliopro_user');
+    sessionStorage.removeItem('bizanalytics_token');
+    sessionStorage.removeItem('bizanalytics_user');
     setUser(null);
   }, []);
 
   const updateUser = useCallback((updatedUser) => {
     setUser(updatedUser);
-    sessionStorage.setItem('portfoliopro_user', JSON.stringify(updatedUser));
-    localStorage.setItem('portfoliopro_user', JSON.stringify(updatedUser));
+    sessionStorage.setItem('bizanalytics_user', JSON.stringify(updatedUser));
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, loading, login, adminLogin, userLogin, register, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

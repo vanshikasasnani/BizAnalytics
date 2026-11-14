@@ -11,13 +11,14 @@ const navItems = [
   { to: '/customers', label: 'Customers', icon: '👥' },
   { to: '/analytics', label: 'Analytics', icon: '📈' },
   { to: '/reports', label: 'Reports', icon: '📑' },
+  { to: '/messages', label: 'Messages', icon: '💬', isMessageItem: true },
 ];
 
 const Navbar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const { notifications, unreadCount, markAsRead, clearAll } = useSocket();
+  const { notifications, unreadCount, unreadMessagesCount, markAsRead, clearAll } = useSocket();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const notifRef = useRef(null);
@@ -45,6 +46,7 @@ const Navbar = () => {
     if (path.startsWith('/customers')) return 'Customers';
     if (path.startsWith('/analytics')) return 'Analytics';
     if (path.startsWith('/reports')) return 'Reports';
+    if (path.startsWith('/messages')) return 'Messages & Comms';
     if (path.startsWith('/notifications')) return 'Notifications';
     if (path.startsWith('/admin')) return 'Admin Dashboard';
     if (path.startsWith('/settings') || path.startsWith('/profile')) return 'Settings';
@@ -71,7 +73,7 @@ const Navbar = () => {
 
       {/* Sidebar */}
       <aside
-        className={`fixed left-0 top-0 h-full z-40 flex flex-col bg-dark-800 border-r border-dark-700 transition-all duration-300 ${
+        className={`fixed left-0 top-0 h-full z-40 flex flex-col bg-dark-800 border-r border-dark-700 overflow-y-auto transition-all duration-300 ${
           sidebarOpen ? 'w-64' : 'w-0 lg:w-64 -translate-x-full lg:translate-x-0'
         }`}
       >
@@ -92,7 +94,7 @@ const Navbar = () => {
 
         {/* Navigation Links in Required Order */}
         <nav className="flex-1 py-4 px-3 space-y-1.5 overflow-y-auto">
-          {navItems.map(({ to, label, icon }) => (
+          {navItems.map(({ to, label, icon, isMessageItem }) => (
             <NavLink
               key={to}
               to={to}
@@ -107,6 +109,11 @@ const Navbar = () => {
             >
               <span className="text-lg flex-shrink-0">{icon}</span>
               <span className="truncate">{label}</span>
+              {isMessageItem && unreadMessagesCount > 0 && (
+                <span className="ml-auto px-1.5 py-0.5 rounded-full bg-blue-600 text-white font-bold text-[10px] animate-pulse">
+                  {unreadMessagesCount}
+                </span>
+              )}
             </NavLink>
           ))}
 
@@ -173,8 +180,22 @@ const Navbar = () => {
           </div>
         </div>
 
-        {/* Top Right Controls: Notification Icon & User Profile */}
-        <div className="flex items-center gap-3">
+        {/* Top Right Controls: Messages, Notification Icon & User Profile */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Direct Messages Icon Button */}
+          <Link
+            to="/messages"
+            className="relative p-2 text-dark-300 hover:text-white hover:bg-dark-700 rounded-xl transition-colors"
+            title="Messages & Comms"
+          >
+            <span className="text-lg">💬</span>
+            {unreadMessagesCount > 0 && (
+              <span className="absolute top-1 right-1 w-4 h-4 bg-blue-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse">
+                {unreadMessagesCount > 9 ? '9+' : unreadMessagesCount}
+              </span>
+            )}
+          </Link>
+
           {/* Notifications Dropdown */}
           <div className="relative" ref={notifRef}>
             <button

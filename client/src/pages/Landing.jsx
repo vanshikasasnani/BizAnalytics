@@ -1,136 +1,281 @@
-import { Link } from 'react-router-dom';
-
-const features = [
-  {
-    icon: '📊',
-    title: 'Executive Sales Dashboard',
-    desc: 'Live key performance indicators: gross revenue, net profits, sales volume, order counts, and category breakdowns.',
-  },
-  {
-    icon: '📦',
-    title: 'Inventory & Product Catalog',
-    desc: 'Track available stock, unit costs, pricing margins, automated low-stock warnings, and SKU sales velocity.',
-  },
-  {
-    icon: '💳',
-    title: 'Sales & Invoicing Pipeline',
-    desc: 'Process customer sales with real-time stock deduction, negative inventory guards, and order receipts.',
-  },
-  {
-    icon: '👥',
-    title: 'Customer Intelligence',
-    desc: 'Directory of enterprise accounts, lifetime spend tracking, order frequencies, and full purchase histories.',
-  },
-  {
-    icon: '📈',
-    title: 'Deep-Dive Analytics',
-    desc: 'Time-series revenue velocity charts, category distributions, payment method breakdowns, and date range filters.',
-  },
-  {
-    icon: '📑',
-    title: 'Data & Report Exports',
-    desc: 'Instant one-click exports of sales invoices, inventory levels, and customer lifetime value directly to CSV.',
-  },
-];
-
-const stats = [
-  { label: 'Active Modules', value: '7+' },
-  { label: 'Real-Time Sync', value: '⚡ Socket.IO' },
-  { label: 'Database Engine', value: '🍃 MongoDB' },
-  { label: 'Security & Auth', value: '🔒 JWT & Roles' },
-];
-
-const CURRENT_YEAR = new Date().getFullYear();
+import { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const Landing = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const { login } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+
+    if (!email.trim() || !password) {
+      setError('Please fill in all fields');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await login(email.trim(), password);
+      const userRole = res?.user?.role;
+      setSuccess(`Authenticated successfully as ${userRole === 'admin' ? 'Administrator' : 'Staff'}. Redirecting...`);
+
+      setTimeout(() => {
+        if (userRole === 'admin') {
+          navigate('/admin/dashboard', { replace: true });
+        } else {
+          navigate('/dashboard', { replace: true });
+        }
+      }, 400);
+    } catch (err) {
+      const message =
+        err.response?.data?.message ||
+        (err.response?.status === 401 ? 'Invalid email or password' : 'Authentication failed. Please try again.');
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Helper for quick demonstration during college presentation
+  const fillCredentials = (demoEmail, demoPassword) => {
+    setEmail(demoEmail);
+    setPassword(demoPassword);
+    setError('');
+  };
+
   return (
-    <div className="min-h-screen bg-dark-900 text-white">
-      {/* Top Nav */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-dark-900/80 backdrop-blur-md border-b border-dark-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-navy-500 to-indigo-600 flex items-center justify-center font-bold text-sm shadow-md shadow-navy-600/30">
-              BA
-            </div>
-            <span className="font-display font-bold text-white text-lg">BizAnalytics</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <Link to="/login" className="btn-secondary btn-sm">
-              Sign In
-            </Link>
-            <Link to="/register" className="btn-primary btn-sm">
-              Get Started
-            </Link>
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-gradient-to-b from-[#0c0908] via-[#16100d] to-[#080605] text-stone-100 flex flex-col justify-between items-center p-4 sm:p-6 relative overflow-hidden select-none">
+      {/* Ambient background glow matching warm brown/black gradient */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[540px] h-[540px] bg-[#c25e2e]/10 rounded-full blur-[140px] pointer-events-none" />
+      <div className="absolute bottom-12 right-1/4 w-[420px] h-[420px] bg-[#3b82f6]/5 rounded-full blur-[130px] pointer-events-none" />
 
-      {/* Hero */}
-      <section className="relative pt-32 pb-20 sm:pb-24 px-4 overflow-hidden">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-navy-600/20 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute top-1/3 right-1/4 w-80 h-80 bg-indigo-600/15 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="max-w-4xl mx-auto text-center relative z-10">
-          <div className="inline-flex items-center gap-2 bg-navy-500/10 border border-navy-500/20 rounded-full px-4 py-1.5 text-navy-400 text-xs font-semibold mb-6">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            Business Performance & Sales Analytics Platform
+      {/* Top Branding Header */}
+      <header className="w-full max-w-5xl flex items-center justify-between py-2 px-1 relative z-10">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center font-extrabold text-white text-base shadow-lg shadow-blue-600/30">
+            BA
           </div>
-
-          <h1 className="text-4xl sm:text-6xl font-display font-extrabold mb-6 leading-tight tracking-tight">
-            Data-Driven Intelligence for <br />
-            <span className="bg-gradient-to-r from-navy-400 via-indigo-300 to-emerald-400 bg-clip-text text-transparent">
-              Revenue & Sales Growth
+          <div>
+            <span className="font-display font-bold text-white text-lg tracking-tight block leading-tight">
+              BizAnalytics
             </span>
-          </h1>
-
-          <p className="text-base sm:text-lg text-dark-300 max-w-2xl mx-auto mb-10 leading-relaxed">
-            Monitor real-time business health, track product inventory, record sales with automatic stock deduction, analyze customer lifetime spend, and export audit reports.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/login" className="btn-primary btn-lg inline-flex items-center justify-center gap-2">
-              Launch Live Platform →
-            </Link>
-            <Link to="/register" className="btn-secondary btn-lg inline-flex items-center justify-center">
-              Create New Account
-            </Link>
+            <span className="text-[11px] text-stone-400 font-medium tracking-wide uppercase">
+              Business Platform
+            </span>
           </div>
         </div>
-      </section>
 
-      {/* Stats Counter */}
-      <section className="py-10 border-y border-dark-800 bg-dark-850/50">
-        <div className="max-w-6xl mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-          {stats.map((s, i) => (
-            <div key={i}>
-              <div className="text-2xl sm:text-3xl font-extrabold text-white font-display mb-1">{s.value}</div>
-              <div className="text-xs text-dark-400 font-medium">{s.label}</div>
+        <Link
+          to="/register"
+          className="text-xs sm:text-sm text-stone-300 hover:text-white px-3.5 py-1.5 rounded-xl border border-stone-800 hover:border-stone-700 bg-stone-900/60 transition-colors"
+        >
+          Create Account
+        </Link>
+      </header>
+
+      {/* Centered Login Card */}
+      <main className="w-full max-w-[430px] my-auto relative z-10">
+        <div className="bg-[#1c1411]/90 backdrop-blur-2xl border border-[#3d2c24]/70 rounded-3xl p-7 sm:p-9 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.8)]">
+          {/* Heading */}
+          <div className="text-center mb-6">
+            <h1 className="text-2xl sm:text-3xl font-display font-bold text-white tracking-tight">
+              Sign In
+            </h1>
+            <p className="text-stone-400 text-xs sm:text-sm mt-1.5 leading-relaxed">
+              Enter your details to access your dashboard.
+            </p>
+          </div>
+
+          {/* Feedback Alerts */}
+          {error && (
+            <div className="mb-5 p-3.5 rounded-xl bg-red-500/10 border border-red-500/25 text-red-400 text-xs font-medium flex items-start gap-2.5 animate-fade-in">
+              <span className="text-sm leading-none mt-0.5">⚠️</span>
+              <span className="flex-1">{error}</span>
             </div>
-          ))}
-        </div>
-      </section>
+          )}
 
-      {/* Feature Cards Grid */}
-      <section className="py-20 px-4 max-w-7xl mx-auto">
-        <div className="text-center mb-16">
-          <h2 className="text-2xl sm:text-3xl font-bold font-display text-white">Full-Stack Business Architecture</h2>
-          <p className="text-dark-400 text-sm mt-2">Engineered with React, Node.js, Express, MongoDB, and Socket.IO</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {features.map((f, i) => (
-            <div key={i} className="card p-6 hover:border-dark-600 transition-all">
-              <div className="text-3xl mb-3">{f.icon}</div>
-              <h3 className="text-base font-bold text-white mb-2">{f.title}</h3>
-              <p className="text-xs text-dark-400 leading-relaxed">{f.desc}</p>
+          {success && (
+            <div className="mb-5 p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-medium flex items-start gap-2.5 animate-fade-in">
+              <span className="text-sm leading-none mt-0.5">✓</span>
+              <span className="flex-1">{success}</span>
             </div>
-          ))}
-        </div>
-      </section>
+          )}
 
-      {/* Footer */}
-      <footer className="border-t border-dark-800 py-8 px-4 text-center text-xs text-dark-500">
-        © {CURRENT_YEAR} Business Performance & Sales Analytics Platform. All rights reserved.
+          {/* Login Form */}
+          <form onSubmit={handleSubmit} noValidate className="space-y-4">
+            {/* Email Field */}
+            <div>
+              <label className="block text-xs font-medium text-stone-300 mb-1.5" htmlFor="email-input">
+                Email Address
+              </label>
+              <div className="relative">
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none">
+                  {/* Email SVG Icon */}
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.206"
+                    />
+                  </svg>
+                </span>
+                <input
+                  id="email-input"
+                  name="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (error) setError('');
+                  }}
+                  required
+                  autoComplete="email"
+                  placeholder="name@example.com"
+                  className="w-full bg-[#110d0b]/80 border border-[#3b2b23] focus:border-blue-500 focus:ring-2 focus:ring-blue-500/25 text-white placeholder-stone-500 text-sm rounded-xl pl-10 pr-4 py-3 outline-none transition-all"
+                />
+              </div>
+            </div>
+
+            {/* Password Field */}
+            <div>
+              <label className="block text-xs font-medium text-stone-300 mb-1.5" htmlFor="password-input">
+                Password
+              </label>
+              <div className="relative">
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none">
+                  {/* Lock SVG Icon */}
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                    />
+                  </svg>
+                </span>
+                <input
+                  id="password-input"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (error) setError('');
+                  }}
+                  required
+                  autoComplete="current-password"
+                  placeholder="••••••••"
+                  className="w-full bg-[#110d0b]/80 border border-[#3b2b23] focus:border-blue-500 focus:ring-2 focus:ring-blue-500/25 text-white placeholder-stone-500 text-sm rounded-xl pl-10 pr-11 py-3 outline-none transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-200 transition-colors p-1"
+                  aria-label={showPassword ? 'Hide value' : 'Show value'}
+                  title={showPassword ? 'Hide value' : 'Show value'}
+                >
+                  {showPassword ? (
+                    /* Eye-slash Icon */
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"
+                      />
+                    </svg>
+                  ) : (
+                    /* Eye Icon */
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                      />
+                    </svg>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Blue Sign In Button */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full mt-2 py-3 px-4 bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold text-sm rounded-xl shadow-lg shadow-blue-600/30 hover:shadow-blue-600/40 transition-all duration-200 active:scale-[0.99] flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+            >
+              {loading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>Signing in...</span>
+                </>
+              ) : (
+                <>
+                  <span>Sign In</span>
+                  <span className="text-base leading-none">→</span>
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* Quick Demo Fill for College Submission Presentation */}
+          <div className="mt-6 pt-5 border-t border-[#36261f]/60 text-center">
+            <p className="text-[11px] uppercase tracking-wider font-semibold text-stone-500 mb-2">
+              Presentation Demo Credentials
+            </p>
+            <div className="flex gap-2 justify-center">
+              <button
+                type="button"
+                onClick={() => fillCredentials('admin@example.com', 'admin123')}
+                className="px-2.5 py-1 text-[11px] rounded-lg bg-[#271b16] hover:bg-[#34241d] text-stone-300 border border-[#3e2b22] transition-colors"
+                title="Fill Admin demo credentials"
+              >
+                🛡️ Admin Account
+              </button>
+              <button
+                type="button"
+                onClick={() => fillCredentials('staff@example.com', 'staff123')}
+                className="px-2.5 py-1 text-[11px] rounded-lg bg-[#271b16] hover:bg-[#34241d] text-stone-300 border border-[#3e2b22] transition-colors"
+                title="Fill Staff demo credentials"
+              >
+                👤 Staff Account
+              </button>
+            </div>
+          </div>
+
+          {/* Footer inside card */}
+          <div className="mt-5 text-center">
+            <p className="text-xs text-stone-400">
+              Don't have an account?{' '}
+              <Link to="/register" className="text-blue-400 hover:text-blue-300 font-medium">
+                Create one
+              </Link>
+            </p>
+          </div>
+        </div>
+      </main>
+
+      {/* Page Footer */}
+      <footer className="w-full max-w-5xl text-center py-3 text-xs text-stone-500 relative z-10">
+        © {new Date().getFullYear()} BizAnalyticsBusiness Platform • All rights reserved
       </footer>
     </div>
   );

@@ -69,14 +69,14 @@ const ProductModal = ({ product, onClose, onSave }) => {
         <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
           {error && <div className="p-3 rounded-xl bg-danger-500/10 border border-danger-500/20 text-danger-400 text-xs">{error}</div>}
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="col-span-2 sm:col-span-1">
               <label className="label">Product Name *</label>
               <input
                 name="name"
                 value={form.name}
                 onChange={handleChange}
-                className="input-field text-xs"
+                className="input-field text-xs w-full"
                 placeholder="e.g. Wireless Mouse"
                 required
               />
@@ -88,7 +88,7 @@ const ProductModal = ({ product, onClose, onSave }) => {
                 name="sku"
                 value={form.sku}
                 onChange={handleChange}
-                className="input-field text-xs"
+                className="input-field text-xs w-full"
                 placeholder="e.g. MSE-001"
                 required
               />
@@ -112,7 +112,7 @@ const ProductModal = ({ product, onClose, onSave }) => {
                 step="any"
                 value={form.price}
                 onChange={handleChange}
-                className="input-field text-xs"
+                className="input-field text-xs w-full"
                 placeholder="0.00"
                 required
               />
@@ -127,7 +127,7 @@ const ProductModal = ({ product, onClose, onSave }) => {
                 step="any"
                 value={form.costPrice}
                 onChange={handleChange}
-                className="input-field text-xs"
+                className="input-field text-xs w-full"
                 placeholder="0.00"
                 required
               />
@@ -141,7 +141,7 @@ const ProductModal = ({ product, onClose, onSave }) => {
                 min="0"
                 value={form.stock}
                 onChange={handleChange}
-                className="input-field text-xs"
+                className="input-field text-xs w-full"
                 placeholder="0"
                 required
               />
@@ -155,7 +155,7 @@ const ProductModal = ({ product, onClose, onSave }) => {
                 min="0"
                 value={form.lowStockThreshold}
                 onChange={handleChange}
-                className="input-field text-xs"
+                className="input-field text-xs w-full"
                 placeholder="5"
               />
             </div>

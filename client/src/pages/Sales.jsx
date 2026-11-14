@@ -87,7 +87,6 @@ const NewSaleModal = ({ onClose, onSave }) => {
     const validItems = selectedItems.filter((it) => it.productId);
     if (validItems.length === 0) return setError('Please select at least one product');
 
-    // Strict client-side validation against negative stock
     for (const item of validItems) {
       const prod = products.find((p) => p._id === item.productId);
       if (!item.quantity || item.quantity <= 0) {
@@ -125,7 +124,9 @@ const NewSaleModal = ({ onClose, onSave }) => {
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[82vh] overflow-y-auto">
-          {error && <div className="p-3 rounded-xl bg-danger-500/10 border border-danger-500/20 text-danger-400 text-xs">{error}</div>}
+          {error && (
+            <div className="p-3 rounded-xl bg-danger-500/10 border border-danger-500/20 text-danger-400 text-xs">{error}</div>
+          )}
 
           {/* Customer & Payment Method */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -258,18 +259,12 @@ const NewSaleModal = ({ onClose, onSave }) => {
           {/* Total Summary */}
           <div className="p-4 rounded-xl bg-dark-850 border border-dark-700 flex items-center justify-between">
             <span className="text-dark-300 text-xs font-medium">Calculated Total Amount:</span>
-            <span className="text-2xl font-bold text-emerald-400 font-display">
-              {formatCurrency(totalAmount)}
-            </span>
+            <span className="text-2xl font-bold text-emerald-400 font-display">{formatCurrency(totalAmount)}</span>
           </div>
 
           <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose} className="btn-secondary flex-1">
-              Cancel
-            </button>
-            <button type="submit" disabled={loading} className="btn-primary flex-1">
-              {loading ? 'Processing...' : 'Complete & Record Sale'}
-            </button>
+            <button type="button" onClick={onClose} className="btn-secondary flex-1">Cancel</button>
+            <button type="submit" disabled={loading} className="btn-primary flex-1">{loading ? 'Processing...' : 'Complete & Record Sale'}</button>
           </div>
         </form>
       </div>
@@ -310,26 +305,28 @@ const SaleDetailsModal = ({ sale, onClose }) => {
           <div>
             <p className="font-semibold text-white mb-2">Purchased Items</p>
             <div className="border border-dark-700 rounded-xl overflow-hidden">
-              <table className="w-full text-left">
-                <thead className="bg-dark-700/60 text-dark-400 uppercase text-[10px]">
-                  <tr>
-                    <th className="p-2.5">Item</th>
-                    <th className="p-2.5 text-center">Qty</th>
-                    <th className="p-2.5 text-right">Price</th>
-                    <th className="p-2.5 text-right">Total</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-dark-700/50">
-                  {sale.items?.map((it, i) => (
-                    <tr key={i}>
-                      <td className="p-2.5 text-white font-medium">{it.name}</td>
-                      <td className="p-2.5 text-center text-dark-300">{it.quantity}</td>
-                      <td className="p-2.5 text-right text-dark-400">{formatCurrency(it.unitPrice)}</td>
-                      <td className="p-2.5 text-right text-white font-semibold">{formatCurrency(it.subtotal)}</td>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead className="bg-dark-700/60 text-dark-400 uppercase text-[10px]">
+                    <tr>
+                      <th className="p-2.5">Item</th>
+                      <th className="p-2.5 text-center">Qty</th>
+                      <th className="p-2.5 text-right">Price</th>
+                      <th className="p-2.5 text-right">Total</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-dark-700/50">
+                    {sale.items?.map((it, i) => (
+                      <tr key={i}>
+                        <td className="p-2.5 text-white font-medium">{it.name}</td>
+                        <td className="p-2.5 text-center text-dark-300">{it.quantity}</td>
+                        <td className="p-2.5 text-right text-dark-400">{formatCurrency(it.unitPrice)}</td>
+                        <td className="p-2.5 text-right text-white font-semibold">{formatCurrency(it.subtotal)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
 
@@ -533,9 +530,7 @@ const Sales = () => {
               <tbody className="divide-y divide-dark-700/50">
                 {sales.map((s) => (
                   <tr key={s._id} className="hover:bg-dark-750 transition-colors">
-                    <td className="py-3.5 px-4 font-mono font-medium text-navy-400">
-                      {s.saleNumber}
-                    </td>
+                    <td className="py-3.5 px-4 font-mono font-medium text-navy-400">{s.saleNumber}</td>
                     <td className="py-3.5 px-4">
                       <p className="font-semibold text-white">{s.customerName}</p>
                       <span className="text-dark-400 text-[11px]">{s.customerEmail}</span>
@@ -543,19 +538,11 @@ const Sales = () => {
                     <td className="py-3.5 px-4 text-dark-300 max-w-xs truncate">
                       {s.items?.map((it) => `${it.quantity}x ${it.name}`).join(', ') || 'N/A'}
                     </td>
-                    <td className="py-3.5 px-4 text-dark-400 whitespace-nowrap">
-                      {new Date(s.date).toLocaleDateString()}
-                    </td>
-                    <td className="py-3.5 px-4 font-bold text-white text-sm">
-                      {formatCurrency(s.totalAmount)}
-                    </td>
-                    <td className="py-3.5 px-4 font-medium text-emerald-400 font-mono">
-                      +{formatCurrency(s.totalProfit)}
-                    </td>
+                    <td className="py-3.5 px-4 text-dark-400 whitespace-nowrap">{new Date(s.date).toLocaleDateString()}</td>
+                    <td className="py-3.5 px-4 font-bold text-white text-sm">{formatCurrency(s.totalAmount)}</td>
+                    <td className="py-3.5 px-4 font-medium text-emerald-400 font-mono">+{formatCurrency(s.totalProfit)}</td>
                     <td className="py-3.5 px-4">
-                      <span className="inline-block px-2 py-0.5 rounded-full bg-dark-700 text-dark-300 text-[11px]">
-                        {s.paymentMethod}
-                      </span>
+                      <span className="inline-block px-2 py-0.5 rounded-full bg-dark-700 text-dark-300 text-[11px]">{s.paymentMethod}</span>
                     </td>
                     <td className="py-3.5 px-4 text-right space-x-2 whitespace-nowrap">
                       <button
@@ -599,4 +586,3 @@ const Sales = () => {
 };
 
 export default Sales;
-

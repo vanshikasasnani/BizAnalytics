@@ -4,6 +4,7 @@ const { app } = require('../server');
 
 describe('Business Performance & Sales Analytics API Test Suite', () => {
   let authToken = '';
+  let staffToken = '';
   let testProductId = '';
   let testCustomerId = '';
   const testEmail = `biz_test_${Date.now()}@example.com`;
@@ -218,7 +219,6 @@ describe('Business Performance & Sales Analytics API Test Suite', () => {
   });
 
   describe('8. Role-Based Access Control & Admin Operations', () => {
-    let staffToken = '';
     const staffEmail = `staff_${Date.now()}@example.com`;
 
     it('POST /api/auth/register should create a staff/user role', async () => {
@@ -290,6 +290,75 @@ describe('Business Performance & Sales Analytics API Test Suite', () => {
 
       expect(res.status).toBe(403);
       expect(res.body.message).toMatch(/Not authorized as an admin/i);
+    });
+  });
+
+  describe('9. Two-Way Internal Messaging APIs', () => {
+    let adminUserId = '';
+    let staffUserId = '';
+
+    beforeAll(async () => {
+      const meAdmin = await request(app).get('/api/auth/me').set('Authorization', `Bearer ${authToken}`);
+      adminUserId = meAdmin.body.user._id;
+
+      const meStaff = await request(app).get('/api/auth/me').set('Authorization', `Bearer ${staffToken}`);
+      staffUserId = meStaff.body.user._id;
+    });
+
+    it('GET /api/messages/conversations should return conversations for Admin', async () => {
+      const res = await request(app)
+        .get('/api/messages/conversations')
+        .set('Authorization', `Bearer ${authToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty('conversations');
+      expect(Array.isArray(res.body.conversations)).toBe(true);
+    });
+
+    it('POST /api/messages should allow Admin to send message to Staff', async () => {
+      const res = await request(app)
+        .post('/api/messages')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          receiverId: staffUserId,
+          message: 'Hello Staff, please review weekly sales numbers.',
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.data.message).toBe('Hello Staff, please review weekly sales numbers.');
+      expect(res.body.data.isRead).toBe(false);
+    });
+
+    it('POST /api/messages should allow Staff to reply to Admin', async () => {
+      const res = await request(app)
+        .post('/api/messages')
+        .set('Authorization', `Bearer ${staffToken}`)
+        .send({
+          receiverId: adminUserId,
+          message: 'Hello Admin, sales are on track and updated.',
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.data.message).toBe('Hello Admin, sales are on track and updated.');
+    });
+
+    it('GET /api/messages/:otherUserId should retrieve conversation history and mark read', async () => {
+      const res = await request(app)
+        .get(`/api/messages/${staffUserId}`)
+        .set('Authorization', `Bearer ${authToken}`);
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body.messages)).toBe(true);
+      expect(res.body.messages.length).toBeGreaterThanOrEqual(2);
+    });
+
+    it('GET /api/messages/unread/count should return unread message count', async () => {
+      const res = await request(app)
+        .get('/api/messages/unread/count')
+        .set('Authorization', `Bearer ${authToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty('unreadCount');
     });
   });
 });

@@ -1,14 +1,21 @@
-# Dependencies
+﻿# Dependencies
 node_modules/
 **/node_modules/
 
-# Environment variables
+# Environment variables and secrets
 .env
+.env.*
 **/.env
+**/.env.*
 
 # Build outputs
 dist/
 build/
+**/dist/
+**/build/
+
+# Backup folders
+project_backup/
 
 # Logs
 logs/
@@ -29,3 +36,6 @@ Thumbs.db
 
 # Vite cache
 .vite/
+
+# Coverage and test output
+coverage/

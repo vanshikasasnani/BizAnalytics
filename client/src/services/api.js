@@ -1,18 +1,16 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Request interceptor - attach token (checks sessionStorage first for tab-isolation, then localStorage)
+// Request interceptor - attach token from sessionStorage for strict tab isolation
 api.interceptors.request.use(
   (config) => {
-    const token =
-      sessionStorage.getItem('portfoliopro_token') ||
-      localStorage.getItem('portfoliopro_token');
+    const token = sessionStorage.getItem('bizanalytics_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -26,10 +24,8 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      sessionStorage.removeItem('portfoliopro_token');
-      sessionStorage.removeItem('portfoliopro_user');
-      localStorage.removeItem('portfoliopro_token');
-      localStorage.removeItem('portfoliopro_user');
+      sessionStorage.removeItem('bizanalytics_token');
+      sessionStorage.removeItem('bizanalytics_user');
       window.location.href = '/login';
     }
     return Promise.reject(error);

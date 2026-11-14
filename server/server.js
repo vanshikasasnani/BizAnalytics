@@ -16,6 +16,8 @@ const saleRoutes = require('./routes/saleRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const messageRoutes = require('./routes/messageRoutes');
+const jwt = require('jsonwebtoken');
 
 // Connect to database
 connectDB();
@@ -54,14 +56,37 @@ const io = new Server(httpServer, {
 // Store io instance for use in controllers
 app.set('io', io);
 
+// Socket.IO authentication middleware
+io.use((socket, next) => {
+  const token = socket.handshake.auth?.token || socket.handshake.headers?.authorization?.split(' ')[1];
+  if (token) {
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      socket.user = decoded;
+      socket.userId = decoded.id;
+    } catch (err) {
+      console.warn('Socket token verification failed:', err.message);
+    }
+  }
+  next();
+});
+
 // Socket.IO connection handling
 io.on('connection', (socket) => {
   console.log(`🔌 Socket connected: ${socket.id}`);
 
-  // User joins their own room using their userId
+  // Auto-join verified user room
+  if (socket.userId) {
+    socket.join(socket.userId.toString());
+    console.log(`👤 Socket automatically joined authenticated room: ${socket.userId}`);
+  }
+
+  // Backwards-compatible room join
   socket.on('join', (userId) => {
-    socket.join(userId);
-    console.log(`👤 User ${userId} joined their room`);
+    if (userId) {
+      socket.join(userId.toString());
+      console.log(`👤 User ${userId} joined their room`);
+    }
   });
 
   socket.on('disconnect', () => {
@@ -82,6 +107,7 @@ app.use('/api/sales', saleRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/messages', messageRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

@@ -29,8 +29,8 @@ const register = async (req, res) => {
       return res.status(400).json({ message: 'This email is already registered.' });
     }
 
-    // Only allow admin role if specifically set (for development seeding)
-    const userRole = role === 'admin' ? 'admin' : 'user';
+    // Strictly normal user role for public registration (only test environment allows admin role parameter for CI tests)
+    const userRole = (process.env.NODE_ENV === 'test' && role === 'admin') ? 'admin' : 'user';
 
     const user = await User.create({
       name,
@@ -61,29 +61,26 @@ const register = async (req, res) => {
 // @desc    Authenticate user & get token
 // @route   POST /api/auth/login
 // @access  Public
+// @desc    Authenticate user & get token (unified role-aware login)
+// @route   POST /api/auth/login
+// @access  Public
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
-
     if (!email || !password) {
       return res.status(400).json({ message: 'Please provide email and password' });
     }
-
     const user = await User.findOne({ email: email.toLowerCase() });
-
     if (!user) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
-
     if (!user.isActive) {
       return res.status(403).json({ message: 'Your account has been deactivated. Contact admin.' });
     }
-
     const isMatch = await user.matchPassword(password);
     if (!isMatch) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
-
     res.json({
       message: 'Login successful',
       user: {
@@ -95,7 +92,83 @@ const login = async (req, res) => {
       token: generateToken(user._id),
     });
   } catch (error) {
-    console.error('Login error:', error.message);
+    console.error('Unified login error:', error.message);
+    res.status(500).json({ message: error.message || 'Server error' });
+  }
+};
+
+// Admin-specific login
+const adminLogin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Please provide email and password' });
+    }
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid email or password' });
+    }
+    if (!user.isActive) {
+      return res.status(403).json({ message: 'Your account has been deactivated. Contact admin.' });
+    }
+    // Ensure role is admin
+    if (user.role !== 'admin') {
+      return res.status(403).json({ message: 'Access denied: Admin accounts only.' });
+    }
+    const isMatch = await user.matchPassword(password);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Invalid email or password' });
+    }
+    res.json({
+      message: 'Admin login successful',
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+      token: generateToken(user._id),
+    });
+  } catch (error) {
+    console.error('Admin login error:', error.message);
+    res.status(500).json({ message: error.message || 'Server error' });
+  }
+};
+
+// User/Staff-specific login
+const userLogin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Please provide email and password' });
+    }
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid email or password' });
+    }
+    if (!user.isActive) {
+      return res.status(403).json({ message: 'Your account has been deactivated. Contact admin.' });
+    }
+    // Ensure role is NOT admin
+    if (user.role === 'admin') {
+      return res.status(403).json({ message: 'Access denied: User accounts only.' });
+    }
+    const isMatch = await user.matchPassword(password);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Invalid email or password' });
+    }
+    res.json({
+      message: 'User login successful',
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+      token: generateToken(user._id),
+    });
+  } catch (error) {
+    console.error('User login error:', error.message);
     res.status(500).json({ message: error.message || 'Server error' });
   }
 };
@@ -183,4 +256,4 @@ const changePassword = async (req, res) => {
   }
 };
 
-module.exports = { register, login, getMe, updateProfile, changePassword };
+module.exports = { register, login, adminLogin, userLogin, getMe, updateProfile, changePassword };
