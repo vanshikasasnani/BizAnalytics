@@ -187,6 +187,16 @@ const toggleUserStatus = async (req, res) => {
     user.isActive = !user.isActive;
     await user.save();
 
+    // Broadcast directory status change
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('directory_updated', {
+        action: 'status_changed',
+        userId: user._id,
+        isActive: user.isActive,
+      });
+    }
+
     res.json({
       message: `User ${user.isActive ? 'activated' : 'deactivated'} successfully`,
       user: { _id: user._id, name: user.name, email: user.email, isActive: user.isActive },
@@ -235,7 +245,17 @@ const deleteUser = async (req, res) => {
     }
 
     const name = user.name;
+    const deletedId = user._id;
     await user.deleteOne();
+
+    // Broadcast directory user deleted
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('directory_updated', {
+        action: 'deleted',
+        userId: deletedId,
+      });
+    }
 
     res.json({ message: `User "${name}" deleted successfully` });
   } catch (error) {
@@ -275,6 +295,21 @@ const createStaffUser = async (req, res) => {
       role: role === 'admin' ? 'admin' : 'user',
       isActive: true,
     });
+
+    // Notify all connected clients in real time that a new staff/user account is available
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('directory_updated', {
+        action: 'created',
+        user: {
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          isActive: user.isActive,
+        },
+      });
+    }
 
     res.status(201).json({
       message: `${user.role === 'admin' ? 'Admin' : 'Staff'} user created successfully`,

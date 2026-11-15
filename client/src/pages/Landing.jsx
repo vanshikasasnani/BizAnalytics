@@ -37,10 +37,20 @@ const Landing = () => {
         }
       }, 400);
     } catch (err) {
-      const message =
-        err.response?.data?.message ||
-        (err.response?.status === 401 ? 'Invalid email or password' : 'Authentication failed. Please try again.');
-      setError(message);
+      if (!err.response) {
+        // Network error — backend is unreachable
+        setError('Cannot connect to the server. Please ensure the backend is running and try again.');
+      } else if (err.response.status === 401) {
+        setError(err.response.data?.message || 'Invalid email or password.');
+      } else if (err.response.status === 422) {
+        // Validation error
+        const msgs = err.response.data?.errors;
+        setError(Array.isArray(msgs) ? msgs.map(e => e.msg).join(' ') : (err.response.data?.message || 'Validation error. Please check your input.'));
+      } else if (err.response.status === 403) {
+        setError(err.response.data?.message || 'Access denied. Your account may be deactivated.');
+      } else {
+        setError(err.response.data?.message || 'Authentication failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }

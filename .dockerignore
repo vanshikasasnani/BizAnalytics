@@ -3,7 +3,12 @@ node_modules
 dist
 **/dist
 .git
+.gitignore
 .env
 **/.env
+!**/.env.example
 npm-debug.log
-
+**/npm-debug.log
+project_backup
+.github
+*.md

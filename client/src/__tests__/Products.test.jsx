@@ -51,6 +51,10 @@ vi.mock('../services/api', () => ({
     post: vi.fn(),
     put: vi.fn(),
     delete: vi.fn(),
+    interceptors: {
+      request: { use: vi.fn() },
+      response: { use: vi.fn() },
+    },
   },
 }));
 

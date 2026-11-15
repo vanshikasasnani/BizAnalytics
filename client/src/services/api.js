@@ -19,11 +19,12 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor - handle 401
+// Response interceptor - handle 401 (only redirect when already authenticated and session expires, NOT during login/auth attempts)
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const isAuthRoute = error.config?.url?.includes('/auth/login') || error.config?.url?.includes('/auth/register');
+    if (error.response?.status === 401 && !isAuthRoute) {
       sessionStorage.removeItem('bizanalytics_token');
       sessionStorage.removeItem('bizanalytics_user');
       window.location.href = '/login';

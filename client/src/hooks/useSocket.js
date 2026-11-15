@@ -56,7 +56,12 @@ const useSocket = () => {
     fetchUnreadMessagesCount();
 
     if (!socket) {
-      const socketServerUrl = import.meta.env.VITE_SOCKET_URL || (import.meta.env.DEV ? 'http://localhost:5000' : '/');
+      // In development: connect directly to the backend dev server.
+      // In Docker/production: VITE_SOCKET_URL is "" (empty) so we connect to
+      // the same origin (window.location.origin), and nginx proxies /socket.io/.
+      const socketServerUrl =
+        import.meta.env.VITE_SOCKET_URL ||
+        (import.meta.env.DEV ? 'http://localhost:5000' : window.location.origin);
       const token = sessionStorage.getItem('bizanalytics_token');
 
       socket = io(socketServerUrl, {

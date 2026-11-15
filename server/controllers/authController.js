@@ -39,6 +39,21 @@ const register = async (req, res) => {
       role: userRole,
     });
 
+    // Notify connected clients that directory updated
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('directory_updated', {
+        action: 'created',
+        user: {
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          isActive: user.isActive,
+        },
+      });
+    }
+
     res.status(201).json({
       message: 'Account created successfully.',
       user: {

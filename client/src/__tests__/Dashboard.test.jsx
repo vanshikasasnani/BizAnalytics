@@ -61,6 +61,10 @@ vi.mock('../context/AppDataContext', () => ({
 vi.mock('../services/api', () => ({
   default: {
     get: vi.fn().mockResolvedValue({ data: mockData }),
+    interceptors: {
+      request: { use: vi.fn() },
+      response: { use: vi.fn() },
+    },
   },
 }));
 

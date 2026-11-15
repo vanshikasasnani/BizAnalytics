@@ -31,6 +31,18 @@ const Messages = () => {
   const activeContactRef = useRef(activeContact);
   activeContactRef.current = activeContact;
 
+  // Helper to extract clean string ID from string or object/ObjectId
+  const extractId = (val) => {
+    if (!val) return '';
+    if (typeof val === 'string') return val;
+    if (typeof val === 'object') {
+      return (val._id || val.id || '').toString();
+    }
+    return String(val);
+  };
+
+  const currentUserId = extractId(user);
+
   const scrollToBottom = (smooth = true) => {
     if (chatScrollContainerRef.current) {
       chatScrollContainerRef.current.scrollTo({
@@ -121,14 +133,14 @@ const Messages = () => {
     if (!socket) return;
 
     const handleNewMessage = (newMsg) => {
-      const activeId = activeContactRef.current?._id;
-      const senderId = newMsg.sender?._id || newMsg.sender;
-      const receiverId = newMsg.receiver?._id || newMsg.receiver;
+      const activeId = extractId(activeContactRef.current);
+      const senderId = extractId(newMsg.senderId || newMsg.sender);
+      const receiverId = extractId(newMsg.receiverId || newMsg.receiver);
 
       // If this message belongs to the open chat
       if (activeId && (senderId === activeId || receiverId === activeId)) {
         setMessages((prev) => {
-          if (prev.some((m) => m._id === newMsg._id)) return prev;
+          if (prev.some((m) => extractId(m._id) === extractId(newMsg._id))) return prev;
           return [...prev, newMsg];
         });
         setTimeout(() => scrollToBottom(true), 50);
@@ -141,8 +153,8 @@ const Messages = () => {
 
       // Update conversations preview
       setConversations((prev) => {
-        const otherId = senderId === user?._id ? receiverId : senderId;
-        const exists = prev.some((c) => c.contact._id === otherId);
+        const otherId = senderId === currentUserId ? receiverId : senderId;
+        const exists = prev.some((c) => extractId(c.contact._id) === otherId);
 
         if (!exists) {
           fetchConversations();
@@ -150,12 +162,12 @@ const Messages = () => {
         }
 
         return prev.map((c) => {
-          if (c.contact._id === otherId) {
+          if (extractId(c.contact._id) === otherId) {
             const isCurrentChat = activeContactRef.current?._id === otherId;
             return {
               ...c,
               lastMessage: newMsg,
-              unreadCount: isCurrentChat || senderId === user?._id ? c.unreadCount : c.unreadCount + 1,
+              unreadCount: isCurrentChat || senderId === currentUserId ? c.unreadCount : c.unreadCount + 1,
             };
           }
           return c;
@@ -164,26 +176,32 @@ const Messages = () => {
     };
 
     const handleMessagesRead = ({ readerId }) => {
-      const activeId = activeContactRef.current?._id;
-      if (activeId && activeId === readerId) {
+      const activeId = extractId(activeContactRef.current);
+      const cleanReaderId = extractId(readerId);
+      if (activeId && activeId === cleanReaderId) {
         setMessages((prev) =>
-          prev.map((m) =>
-            m.sender?._id === user?._id || m.sender === user?._id
-              ? { ...m, isRead: true }
-              : m
-          )
+          prev.map((m) => {
+            const mSenderId = extractId(m.senderId || m.sender);
+            return mSenderId === currentUserId ? { ...m, isRead: true } : m;
+          })
         );
       }
+    };
+
+    const handleDirectoryUpdated = () => {
+      fetchConversations();
     };
 
     socket.on('new_message', handleNewMessage);
     socket.on('message_sent', handleNewMessage);
     socket.on('messages_read', handleMessagesRead);
+    socket.on('directory_updated', handleDirectoryUpdated);
 
     return () => {
       socket.off('new_message', handleNewMessage);
       socket.off('message_sent', handleNewMessage);
       socket.off('messages_read', handleMessagesRead);
+      socket.off('directory_updated', handleDirectoryUpdated);
     };
   }, [socket, user?._id, fetchConversations]);
 
@@ -357,7 +375,7 @@ const Messages = () => {
                         <p className="text-[11px] text-dark-400 truncate flex-1">
                           {lastMessage ? (
                             <span>
-                              {lastMessage.sender === user?._id || lastMessage.sender?._id === user?._id ? 'You: ' : ''}
+                              {extractId(lastMessage.senderId || lastMessage.sender) === currentUserId ? 'You: ' : ''}
                               {lastMessage.message}
                             </span>
                           ) : (
@@ -459,7 +477,8 @@ const Messages = () => {
                   </div>
                 ) : (
                   messages.map((m) => {
-                    const isMe = m.sender?._id === user?._id || m.sender === user?._id;
+                    const messageSenderId = extractId(m.senderId || m.sender);
+                    const isMe = Boolean(currentUserId && messageSenderId === currentUserId);
 
                     return (
                       <div
@@ -488,10 +507,10 @@ const Messages = () => {
                           </span>
                           {isMe && (
                             <span
-                              className={`text-[10px] font-bold ${
-                                m.isRead ? 'text-blue-400' : 'text-dark-500'
+                              className={`text-[11px] font-bold tracking-tighter ${
+                                m.isRead ? 'text-sky-400 font-extrabold' : 'text-dark-400'
                               }`}
-                              title={m.isRead ? 'Seen by receiver' : 'Delivered'}
+                              title={m.isRead ? 'Read (Double Blue Tick)' : 'Sent / Delivered (Single Tick)'}
                             >
                               {m.isRead ? '✓✓' : '✓'}
                             </span>
